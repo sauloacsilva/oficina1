@@ -1,430 +1,422 @@
 /**
- * RedeLab: Lógica do Feed e Algoritmo
- * Todos os posts iniciam ZERADOS.
- * As estatísticas e alcance de usuários fictícios são construídos pelas ações do usuário.
+ * RedeLab — Sincronização em Tempo Real com Firebase Realtime Database
+ * Todos os dispositivos na sala veem as mesmas interações ao vivo.
+ *
+ * ⚙️  CONFIGURAÇÃO: preencha FIREBASE_CONFIG com os dados do seu projeto.
+ *     Guia completo em: https://console.firebase.google.com/
  */
 
-// Universo simulado de estudantes fictícios
+// ============================================================
+// ⚙️  COLE AQUI OS DADOS DO SEU PROJETO FIREBASE
+// ============================================================
+const FIREBASE_CONFIG = {
+  apiKey:            "COLE_SUA_API_KEY",
+  authDomain:        "SEU_PROJETO.firebaseapp.com",
+  databaseURL:       "https://SEU_PROJETO-default-rtdb.firebaseio.com",
+  projectId:         "SEU_PROJETO",
+  storageBucket:     "SEU_PROJETO.appspot.com",
+  messagingSenderId: "SEU_SENDER_ID",
+  appId:             "SEU_APP_ID"
+};
+// ============================================================
+
 const TOTAL_FICTITIOUS_USERS = 10000;
 
-// Pesos definidos para a oficina
 const WEIGHTS = {
-  LIKE: 2,         // +2 pts
-  COMMENT: 8,      // +8 pts
-  REPLY: 12,       // +12 pts
-  COMMENT_LIKE: 1, // +1 pt
-  SHARE: 20        // +20 pts
+  LIKE:          2,
+  COMMENT:       8,
+  REPLY:        12,
+  COMMENT_LIKE:  1,
+  SHARE:        20
 };
 
-// Estado inicial dos 5 posts intercalados - TOTALMENTE ZERADOS
-const posts = {
-  1: {
-    id: 1,
-    title: "Post 1: Gincana Cultural",
-    author: "Lucas Gabriel (9º B)",
-    likes: 0,
-    userLiked: false,
-    shares: 0,
-    userShared: false,
-    comments: [],
-    reachFactor: 8.0 // Post amigável
-  },
-  2: {
-    id: 2,
-    title: "Post 2: Ataque às Garotas nos Esportes (Misoginia)",
-    author: "Thiago Alves (9º A)",
-    likes: 0,
-    userLiked: false,
-    shares: 0,
-    userShared: false,
-    comments: [],
-    reachFactor: 15.5 // Conteúdo misógino gera discussão intensa e viraliza rápido
-  },
-  3: {
-    id: 3,
-    title: "Post 3: Maquete de Ciências",
-    author: "Marina Pereira (8º A)",
-    likes: 0,
-    userLiked: false,
-    shares: 0,
-    userShared: false,
-    comments: [],
-    reachFactor: 8.5 // Post amigável
-  },
-  4: {
-    id: 4,
-    title: "Post 4: Preconceito contra Bolsistas (Discurso de Ódio)",
-    author: "Gabriel Fonseca (9º C)",
-    likes: 0,
-    userLiked: false,
-    shares: 0,
-    userShared: false,
-    comments: [],
-    reachFactor: 16.0 // Discurso de ódio polariza a rede e fura bolhas velozmente
-  },
-  5: {
-    id: 5,
-    title: "Post 5: Provocação Manhã vs. Tarde",
-    author: "Enzo Santos (9º A)",
-    likes: 0,
-    userLiked: false,
-    shares: 0,
-    userShared: false,
-    comments: [],
-    reachFactor: 13.0 // Provocação clássica de turnos
+// Metadados locais — não precisam ir ao banco
+const POST_META = {
+  1: { reachFactor: 8.0  },
+  2: { reachFactor: 15.5 },
+  3: { reachFactor: 8.5  },
+  4: { reachFactor: 16.0 },
+  5: { reachFactor: 13.0 }
+};
+
+// Estrutura zerada para reset
+function getZeroState() {
+  const s = {};
+  for (let i = 1; i <= 5; i++) {
+    s[i] = { likes: 0, shares: 0, comments: {} };
   }
-};
+  return s;
+}
 
-let commentIdCounter = 1;
+// Referência global ao nó do Firebase
+let postsRef = null;
+// Cópia local dos dados mais recentes recebidos do Firebase
+let currentData = getZeroState();
 
-document.addEventListener("DOMContentLoaded", () => {
-  updateAllCalculations();
+// ============================================================
+// Inicialização
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  const isConfigured = FIREBASE_CONFIG.apiKey !== 'COLE_SUA_API_KEY';
+
+  if (isConfigured) {
+    try {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      const db  = firebase.database();
+      postsRef  = db.ref('oficina/posts');
+
+      // Escuta todas as mudanças em tempo real
+      postsRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (!data) {
+          // Primeira vez: grava o estado zerado no banco
+          postsRef.set(getZeroState());
+          return;
+        }
+        currentData = data;
+        renderAll(data);
+        updateAllCalculations(data);
+      });
+    } catch (e) {
+      console.error('Erro ao inicializar Firebase:', e);
+      fallbackLocal();
+    }
+  } else {
+    // Firebase não configurado — modo local (um dispositivo)
+    fallbackLocal();
+  }
 });
 
-/**
- * Alterna entre abas
- */
-function switchTab(tabId) {
-  document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
-  document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
-  document.querySelectorAll(".m-btn").forEach(b => b.classList.remove("active"));
-
-  if (tabId === "oficina") {
-    document.getElementById("sectionOficina").classList.add("active");
-    document.getElementById("navOficinaBtn").classList.add("active");
-    const mBtns = document.querySelectorAll(".m-btn");
-    if (mBtns[0]) mBtns[0].classList.add("active");
-  } else if (tabId === "feed") {
-    document.getElementById("sectionFeed").classList.add("active");
-    document.getElementById("navFeedBtn").classList.add("active");
-    const mBtns = document.querySelectorAll(".m-btn");
-    if (mBtns[1]) mBtns[1].classList.add("active");
-  } else if (tabId === "stats") {
-    document.getElementById("sectionStats").classList.add("active");
-    document.getElementById("navStatsBtn").classList.add("active");
-    const mBtns = document.querySelectorAll(".m-btn");
-    if (mBtns[2]) mBtns[2].classList.add("active");
-  }
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
+function fallbackLocal() {
+  console.warn('Firebase não configurado. Rodando em modo local.');
+  renderAll(currentData);
+  updateAllCalculations(currentData);
 }
 
-/**
- * Curtir — cada clique adiciona +1 (simula diferentes usuários curtindo)
- */
+// ============================================================
+// Ações do usuário → escrevem no Firebase
+// ============================================================
+
 function toggleLike(postId) {
-  const post = posts[postId];
-  if (!post) return;
-
-  post.likes += 1;
-  post.userLiked = true;
-  showToast(`❤️ Post curtido!`);
-
-  renderPostButtonsAndStats(postId);
-  updateAllCalculations();
+  if (postsRef) {
+    postsRef.child(`${postId}/likes`).transaction(n => (n || 0) + 1);
+  } else {
+    currentData[postId].likes += 1;
+    renderAll(currentData);
+    updateAllCalculations(currentData);
+  }
+  showToast('❤️ Post curtido!');
 }
 
-/**
- * Compartilhar
- */
 function sharePost(postId) {
-  const post = posts[postId];
-  if (!post) return;
-
-  post.shares += 1;
-  post.userShared = true;
-  showToast(`🚀 Post compartilhado!`);
-
-  renderPostButtonsAndStats(postId);
-  updateAllCalculations();
+  if (postsRef) {
+    postsRef.child(`${postId}/shares`).transaction(n => (n || 0) + 1);
+  } else {
+    currentData[postId].shares += 1;
+    renderAll(currentData);
+    updateAllCalculations(currentData);
+  }
+  showToast('🚀 Post compartilhado!');
 }
 
-/**
- * Adicionar comentário comum
- */
 function submitComment(postId) {
   const input = document.getElementById(`commentInput-${postId}`);
   if (!input) return;
   const text = input.value.trim();
   if (!text) return;
 
-  const post = posts[postId];
-  const comment = {
-    id: commentIdCounter++,
-    author: "Você (Estudante)",
-    text: text,
-    likes: 0,
-    userLiked: false,
-    replies: []
-  };
+  const newComment = { author: 'Aluno Participante', text, likes: 0, replies: {} };
 
-  post.comments.push(comment);
-  input.value = "";
-
-  renderCommentsList(postId);
-  renderPostButtonsAndStats(postId);
-  updateAllCalculations();
-
-  showToast(`💬 Comentário enviado!`);
-}
-
-/**
- * Renderiza comentários do post
- */
-function renderCommentsList(postId) {
-  const container = document.getElementById(`commentsArea-${postId}`);
-  if (!container) return;
-  container.innerHTML = "";
-
-  posts[postId].comments.forEach(c => {
-    const card = document.createElement("div");
-    card.className = "comment-card";
-    card.id = `cCard-${postId}-${c.id}`;
-
-    let repliesHtml = "";
-    if (c.replies && c.replies.length > 0) {
-      repliesHtml = `<div class="replies-thread">` + 
-        c.replies.map(r => `<div class="reply-item"><strong>${escapeHtml(r.author)}:</strong> ${escapeHtml(r.text)}</div>`).join("") +
-        `</div>`;
-    }
-
-    card.innerHTML = `
-      <div class="c-header">
-        <span class="c-user">${escapeHtml(c.author)}</span>
-      </div>
-      <div class="c-body-text">${escapeHtml(c.text)}</div>
-      <div class="c-actions-row">
-        <button class="c-like-btn ${c.userLiked ? 'liked' : ''}" onclick="likeComment(${postId}, ${c.id})">
-          ❤️ ${c.likes} ${c.likes === 1 ? 'curtida' : 'curtidas'}
-        </button>
-        <button class="c-reply-btn" onclick="toggleReplyBox(${postId}, ${c.id})">
-          Responder
-        </button>
-      </div>
-      ${repliesHtml}
-      <div class="reply-input-row" id="replyRow-${postId}-${c.id}" style="display: none;">
-        <input type="text" placeholder="Escreva sua resposta..." id="replyInput-${postId}-${c.id}" onkeypress="if(event.key==='Enter') submitReply(${postId}, ${c.id})">
-        <button onclick="submitReply(${postId}, ${c.id})">Enviar</button>
-      </div>
-    `;
-
-    container.appendChild(card);
-  });
-}
-
-/**
- * Curtir comentário — cada clique adiciona +1
- */
-function likeComment(postId, commentId) {
-  const post = posts[postId];
-  const comment = post.comments.find(c => c.id === commentId);
-  if (!comment) return;
-
-  comment.likes += 1;
-  comment.userLiked = true;
-  showToast(`❤️ Curtida no comentário!`);
-
-  renderCommentsList(postId);
-  updateAllCalculations();
-}
-
-/**
- * Abrir caixa de resposta
- */
-function toggleReplyBox(postId, commentId) {
-  const row = document.getElementById(`replyRow-${postId}-${commentId}`);
-  if (!row) return;
-  row.style.display = row.style.display === "none" ? "flex" : "none";
-  if (row.style.display === "flex") {
-    const input = document.getElementById(`replyInput-${postId}-${commentId}`);
-    if (input) input.focus();
+  if (postsRef) {
+    postsRef.child(`${postId}/comments`).push(newComment);
+  } else {
+    const id = `c${Date.now()}`;
+    if (!currentData[postId].comments) currentData[postId].comments = {};
+    currentData[postId].comments[id] = newComment;
+    renderAll(currentData);
+    updateAllCalculations(currentData);
   }
+
+  input.value = '';
+  showToast('💬 Comentário enviado!');
 }
 
-/**
- * Enviar resposta ao comentário
- */
+function likeComment(postId, commentId) {
+  if (postsRef) {
+    postsRef.child(`${postId}/comments/${commentId}/likes`).transaction(n => (n || 0) + 1);
+  } else {
+    const c = currentData[postId].comments[commentId];
+    if (c) { c.likes = (c.likes || 0) + 1; }
+    renderAll(currentData);
+    updateAllCalculations(currentData);
+  }
+  showToast('❤️ Curtida no comentário!');
+}
+
 function submitReply(postId, commentId) {
   const input = document.getElementById(`replyInput-${postId}-${commentId}`);
   if (!input) return;
   const text = input.value.trim();
   if (!text) return;
 
-  const post = posts[postId];
-  const comment = post.comments.find(c => c.id === commentId);
-  if (!comment) return;
+  const reply = { author: 'Aluno Participante', text };
 
-  comment.replies.push({
-    author: "Você",
-    text: text
-  });
+  if (postsRef) {
+    postsRef.child(`${postId}/comments/${commentId}/replies`).push(reply);
+  } else {
+    const c = currentData[postId].comments[commentId];
+    if (c) {
+      if (!c.replies) c.replies = {};
+      c.replies[`r${Date.now()}`] = reply;
+    }
+    renderAll(currentData);
+    updateAllCalculations(currentData);
+  }
 
-  renderCommentsList(postId);
-  renderPostButtonsAndStats(postId);
-  updateAllCalculations();
-
-  showToast(`🔁 Resposta enviada!`);
+  const row = document.getElementById(`replyRow-${postId}-${commentId}`);
+  if (row) row.style.display = 'none';
+  input.value = '';
+  showToast('🔁 Resposta enviada!');
 }
 
-/**
- * Atualiza números nos botões e faixas do feed
- */
-function renderPostButtonsAndStats(postId) {
-  const post = posts[postId];
-  if (!post) return;
+// Abre/fecha caixa de resposta (apenas local — sem Firebase)
+function toggleReplyBox(postId, commentId) {
+  const row = document.getElementById(`replyRow-${postId}-${commentId}`);
+  if (!row) return;
+  row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+  if (row.style.display === 'flex') {
+    const input = document.getElementById(`replyInput-${postId}-${commentId}`);
+    if (input) input.focus();
+  }
+}
 
-  // Botão curtir
+// Reset: sobrescreve o nó do Firebase com zeros
+function resetAllFeed() {
+  const zero = getZeroState();
+  if (postsRef) {
+    postsRef.set(zero);
+  } else {
+    currentData = zero;
+    renderAll(currentData);
+    updateAllCalculations(currentData);
+  }
+  showToast('🔄 Todos os posts foram zerados com sucesso!');
+}
+
+// ============================================================
+// Renderização — atualiza o DOM a partir dos dados do Firebase
+// ============================================================
+
+function renderAll(data) {
+  for (let id = 1; id <= 5; id++) {
+    const post = (data && data[id]) || { likes: 0, shares: 0, comments: {} };
+    renderPostStats(id, post);
+    renderCommentsList(id, post.comments || {});
+  }
+}
+
+function renderPostStats(postId, post) {
+  const likes    = post.likes   || 0;
+  const shares   = post.shares  || 0;
+  const comments = post.comments || {};
+
+  let totalComments = 0;
+  let totalReplies  = 0;
+  Object.values(comments).forEach(c => {
+    totalComments++;
+    totalReplies += Object.keys(c.replies || {}).length;
+  });
+  const totalCount = totalComments + totalReplies;
+
+  const sLikes    = document.getElementById(`statLikes-${postId}`);
+  const sComments = document.getElementById(`statComments-${postId}`);
+  const sShares   = document.getElementById(`statShares-${postId}`);
+
+  if (sLikes)    sLikes.innerHTML    = `❤️ <strong>${likes}</strong> ${likes === 1 ? 'curtida' : 'curtidas'}`;
+  if (sComments) sComments.innerHTML = `💬 <strong>${totalCount}</strong> ${totalCount === 1 ? 'comentário' : 'comentários'}`;
+  if (sShares)   sShares.innerHTML   = `🚀 <strong>${shares}</strong> ${shares === 1 ? 'compartilhamento' : 'compartilhamentos'}`;
+
   const btnLike = document.getElementById(`btnLike-${postId}`);
   if (btnLike) {
-    btnLike.classList.toggle("liked", post.userLiked);
-    btnLike.querySelector(".btn-icon").innerText = post.userLiked ? "❤️" : "🤍";
-    btnLike.querySelector(".btn-label").innerText = post.userLiked ? "Curtido" : "Curtir";
+    btnLike.classList.toggle('liked', likes > 0);
+    btnLike.querySelector('.btn-icon').innerText = likes > 0 ? '❤️' : '🤍';
+    btnLike.querySelector('.btn-label').innerText = likes > 0 ? `Curtido (${likes})` : 'Curtir';
   }
 
-  // Botão compartilhar
   const btnShare = document.getElementById(`btnShare-${postId}`);
   if (btnShare) {
-    btnShare.classList.toggle("shared", post.userShared);
+    btnShare.classList.toggle('shared', shares > 0);
   }
-
-  // Contagem de comentários (comentários + respostas)
-  let totalComments = post.comments.length;
-  post.comments.forEach(c => {
-    if (c.replies) totalComments += c.replies.length;
-  });
-
-  // Faixa de estatísticas
-  const sLikes = document.getElementById(`statLikes-${postId}`);
-  const sComments = document.getElementById(`statComments-${postId}`);
-  const sShares = document.getElementById(`statShares-${postId}`);
-
-  if (sLikes) sLikes.innerHTML = `❤️ <strong>${post.likes}</strong> ${post.likes === 1 ? 'curtida' : 'curtidas'}`;
-  if (sComments) sComments.innerHTML = `💬 <strong>${totalComments}</strong> ${totalComments === 1 ? 'comentário' : 'comentários'}`;
-  if (sShares) sShares.innerHTML = `🚀 <strong>${post.shares}</strong> ${post.shares === 1 ? 'compartilhamento' : 'compartilhamentos'}`;
 }
 
-/**
- * Calcula a pontuação e o alcance de cada post
- */
-function updateAllCalculations() {
+function renderCommentsList(postId, comments) {
+  const container = document.getElementById(`commentsArea-${postId}`);
+  if (!container) return;
+
+  // Preserva reply boxes que estavam abertos
+  const openBoxes = new Set();
+  container.querySelectorAll('.reply-input-row').forEach(row => {
+    if (row.style.display !== 'none' && row.id) openBoxes.add(row.id);
+  });
+
+  container.innerHTML = '';
+
+  Object.entries(comments).forEach(([commentId, c]) => {
+    const replies      = c.replies || {};
+    const replyEntries = Object.entries(replies);
+    const replyRowId   = `replyRow-${postId}-${commentId}`;
+    const wasOpen      = openBoxes.has(replyRowId);
+
+    let repliesHtml = '';
+    if (replyEntries.length > 0) {
+      repliesHtml = `<div class="replies-thread">` +
+        replyEntries.map(([, r]) =>
+          `<div class="reply-item"><strong>${escapeHtml(r.author)}:</strong> ${escapeHtml(r.text)}</div>`
+        ).join('') +
+        `</div>`;
+    }
+
+    const likesCount = c.likes || 0;
+    const card = document.createElement('div');
+    card.className = 'comment-card';
+    card.innerHTML = `
+      <div class="c-header">
+        <span class="c-user">${escapeHtml(c.author)}</span>
+      </div>
+      <div class="c-body-text">${escapeHtml(c.text)}</div>
+      <div class="c-actions-row">
+        <button class="c-like-btn${likesCount > 0 ? ' liked' : ''}"
+                onclick="likeComment(${postId}, '${commentId}')">
+          ❤️ ${likesCount} ${likesCount === 1 ? 'curtida' : 'curtidas'}
+        </button>
+        <button class="c-reply-btn" onclick="toggleReplyBox(${postId}, '${commentId}')">
+          Responder
+        </button>
+      </div>
+      ${repliesHtml}
+      <div class="reply-input-row" id="${replyRowId}" style="display:${wasOpen ? 'flex' : 'none'};">
+        <input type="text" placeholder="Escreva sua resposta..."
+               id="replyInput-${postId}-${commentId}"
+               onkeypress="if(event.key==='Enter') submitReply(${postId}, '${commentId}')">
+        <button onclick="submitReply(${postId}, '${commentId}')">Enviar</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// ============================================================
+// Cálculo de estatísticas
+// ============================================================
+
+function updateAllCalculations(data) {
+  data = data || currentData;
+
   let totalInteractionsCount = 0;
-  let totalGlobalScore = 0;
   let maxReach = 0;
 
   for (let id = 1; id <= 5; id++) {
-    const post = posts[id];
-    let repliesCount = 0;
+    const post     = (data && data[id]) || { likes: 0, shares: 0, comments: {} };
+    const likes    = post.likes  || 0;
+    const shares   = post.shares || 0;
+    const comments = post.comments || {};
+
+    let commentsCount    = 0;
+    let repliesCount     = 0;
     let commentLikesCount = 0;
 
-    post.comments.forEach(c => {
-      commentLikesCount += c.likes;
-      if (c.replies) repliesCount += c.replies.length;
+    Object.values(comments).forEach(c => {
+      commentsCount++;
+      commentLikesCount += c.likes || 0;
+      repliesCount      += Object.keys(c.replies || {}).length;
     });
 
-    const totalCommentsAndReplies = post.comments.length + repliesCount;
-    const actionsOnThisPost = post.likes + totalCommentsAndReplies + commentLikesCount + post.shares;
-    totalInteractionsCount += actionsOnThisPost;
+    totalInteractionsCount += likes + commentsCount + repliesCount + commentLikesCount + shares;
 
-    // Fórmula exata
-    const score = 
-      (post.likes * WEIGHTS.LIKE) +
-      (post.comments.length * WEIGHTS.COMMENT) +
-      (repliesCount * WEIGHTS.REPLY) +
+    const score =
+      (likes           * WEIGHTS.LIKE)          +
+      (commentsCount   * WEIGHTS.COMMENT)        +
+      (repliesCount    * WEIGHTS.REPLY)          +
       (commentLikesCount * WEIGHTS.COMMENT_LIKE) +
-      (post.shares * WEIGHTS.SHARE);
+      (shares          * WEIGHTS.SHARE);
 
-    totalGlobalScore += score;
-
-    // Se o post tiver 0 ações, seu alcance é 0
     let reach = 0;
     if (score > 0) {
-      // Começa com base de 15 pessoas e escala
-      reach = Math.min(TOTAL_FICTITIOUS_USERS, Math.round(15 + (score * post.reachFactor)));
+      reach = Math.min(TOTAL_FICTITIOUS_USERS,
+        Math.round(15 + score * POST_META[id].reachFactor));
     }
+    if (reach > maxReach) maxReach = reach;
 
-    if (reach > maxReach) {
-      maxReach = reach;
-    }
-
-    // Atualiza linha de estatísticas
-    const metaEl = document.getElementById(`statMeta-${id}`);
-    const ptsEl = document.getElementById(`statPoints-${id}`);
+    const totalCommentCount = commentsCount + repliesCount;
+    const metaEl  = document.getElementById(`statMeta-${id}`);
+    const ptsEl   = document.getElementById(`statPoints-${id}`);
     const reachEl = document.getElementById(`statReach-${id}`);
-    const barEl = document.getElementById(`statBar-${id}`);
+    const barEl   = document.getElementById(`statBar-${id}`);
 
-    if (metaEl) {
-      metaEl.innerText = `${post.likes} curtidas • ${totalCommentsAndReplies} comentários/respostas • ${post.shares} compartilhamentos`;
-    }
-    if (ptsEl) ptsEl.innerText = `${score} pts`;
-    if (reachEl) reachEl.innerText = `${reach.toLocaleString("pt-BR")} pessoas`;
+    if (metaEl)  metaEl.innerText   = `${likes} curtidas • ${totalCommentCount} comentários/respostas • ${shares} compartilhamentos`;
+    if (ptsEl)   ptsEl.innerText    = `${score} pts`;
+    if (reachEl) reachEl.innerText  = `${reach.toLocaleString('pt-BR')} pessoas`;
     if (barEl) {
       const pct = ((reach / TOTAL_FICTITIOUS_USERS) * 100).toFixed(1);
       barEl.style.width = `${Math.min(100, pct)}%`;
     }
   }
 
-  // Atualiza indicadores na barra lateral
-  const navInteractions = document.getElementById("navFeedInteractions");
-  const navScore = document.getElementById("navStatsScore");
-  const sideReachVal = document.getElementById("sidebarReachValue");
-  const sideReachBar = document.getElementById("sidebarReachBar");
+  const navInteractions = document.getElementById('navFeedInteractions');
+  const sideReachVal    = document.getElementById('sidebarReachValue');
+  const sideReachBar    = document.getElementById('sidebarReachBar');
 
   if (navInteractions) navInteractions.innerText = `${totalInteractionsCount} ${totalInteractionsCount === 1 ? 'ação' : 'ações'}`;
-  if (navScore) navScore.innerText = `${totalGlobalScore} pts`;
-  if (sideReachVal) sideReachVal.innerText = maxReach.toLocaleString("pt-BR");
+  if (sideReachVal)    sideReachVal.innerText    = maxReach.toLocaleString('pt-BR');
   if (sideReachBar) {
-    const totalPct = ((maxReach / TOTAL_FICTITIOUS_USERS) * 100).toFixed(0);
-    sideReachBar.style.width = `${Math.min(100, totalPct)}%`;
+    const pct = ((maxReach / TOTAL_FICTITIOUS_USERS) * 100).toFixed(0);
+    sideReachBar.style.width = `${Math.min(100, pct)}%`;
   }
 }
 
-/**
- * Reseta todos os dados para zero
- */
-function resetAllFeed() {
-  for (let id = 1; id <= 5; id++) {
-    posts[id].likes = 0;
-    posts[id].userLiked = false;
-    posts[id].shares = 0;
-    posts[id].userShared = false;
-    posts[id].comments = [];
-    renderCommentsList(id);
-    renderPostButtonsAndStats(id);
-  }
+// ============================================================
+// Navegação entre abas
+// ============================================================
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-pane').forEach(p  => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b  => b.classList.remove('active'));
+  document.querySelectorAll('.m-btn').forEach(b     => b.classList.remove('active'));
 
-  updateAllCalculations();
-  showToast("🔄 Todos os posts foram zerados com sucesso!");
+  const sections = { oficina: 'sectionOficina', feed: 'sectionFeed', stats: 'sectionStats' };
+  const navBtns  = { oficina: 'navOficinaBtn',  feed: 'navFeedBtn',   stats: 'navStatsBtn'   };
+  const mIndex   = { oficina: 0, feed: 1, stats: 2 };
+
+  if (sections[tabId]) document.getElementById(sections[tabId]).classList.add('active');
+  if (navBtns[tabId])  document.getElementById(navBtns[tabId]).classList.add('active');
+  const mBtns = document.querySelectorAll('.m-btn');
+  if (mBtns[mIndex[tabId]]) mBtns[mIndex[tabId]].classList.add('active');
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/**
- * Dica nos nós do SVG
- */
+// ============================================================
+// SVG Interativo
+// ============================================================
 function updateNodeHint(text) {
-  const box = document.getElementById("nodeHintBox");
-  if (box) {
-    box.innerHTML = `💡 <strong>Papel no Grafo:</strong> ${escapeHtml(text)}`;
-  }
+  const box = document.getElementById('nodeHintBox');
+  if (box) box.innerHTML = `💡 <strong>Papel no Grafo:</strong> ${escapeHtml(text)}`;
 }
 
-/**
- * Toast
- */
+// ============================================================
+// Toast
+// ============================================================
 let toastTimeout = null;
 function showToast(text) {
-  const toast = document.getElementById("toastNotification");
+  const toast = document.getElementById('toastNotification');
   if (!toast) return;
-
   toast.innerText = text;
-  toast.classList.remove("hidden");
-
+  toast.classList.remove('hidden');
   if (toastTimeout) clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => {
-    toast.classList.add("hidden");
-  }, 2800);
+  toastTimeout = setTimeout(() => toast.classList.add('hidden'), 2800);
 }
 
 function escapeHtml(str) {
-  const div = document.createElement("div");
+  const div = document.createElement('div');
   div.appendChild(document.createTextNode(str));
   return div.innerHTML;
 }
