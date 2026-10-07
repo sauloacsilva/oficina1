@@ -110,20 +110,15 @@ function switchTab(tabId) {
 }
 
 /**
- * Curtir / Descurtir
+ * Curtir — cada clique adiciona +1 (simula diferentes usuários curtindo)
  */
 function toggleLike(postId) {
   const post = posts[postId];
   if (!post) return;
 
-  post.userLiked = !post.userLiked;
-  if (post.userLiked) {
-    post.likes += 1;
-    showToast(`❤️ Post curtido!`);
-  } else {
-    post.likes = Math.max(0, post.likes - 1);
-    showToast(`🤍 Curtida removida.`);
-  }
+  post.likes += 1;
+  post.userLiked = true;
+  showToast(`❤️ Post curtido!`);
 
   renderPostButtonsAndStats(postId);
   updateAllCalculations();
@@ -218,20 +213,16 @@ function renderCommentsList(postId) {
 }
 
 /**
- * Curtir comentário
+ * Curtir comentário — cada clique adiciona +1
  */
 function likeComment(postId, commentId) {
   const post = posts[postId];
   const comment = post.comments.find(c => c.id === commentId);
   if (!comment) return;
 
-  comment.userLiked = !comment.userLiked;
-  if (comment.userLiked) {
-    comment.likes += 1;
-    showToast(`❤️ Curtida no comentário!`);
-  } else {
-    comment.likes = Math.max(0, comment.likes - 1);
-  }
+  comment.likes += 1;
+  comment.userLiked = true;
+  showToast(`❤️ Curtida no comentário!`);
 
   renderCommentsList(postId);
   updateAllCalculations();
