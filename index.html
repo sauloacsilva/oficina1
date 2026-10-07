@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Matemática dos Algoritmos | Oficina Escolar</title>
+  <meta name="description" content="Oficina interativa para estudantes de 14 anos explorarem como a matemática e os algoritmos controlam as redes sociais.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Navegação Lateral -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-box">
+          <div class="logo-icon-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+          </div>
+          <div>
+            <h1 class="logo-title">RedeLab</h1>
+            <span class="logo-subtitle">Oficina de Matemática</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" id="navOficinaBtn" onclick="switchTab('oficina')">
+          <span class="nav-icon">📘</span>
+          <span class="nav-text">Roteiro da Oficina</span>
+        </button>
+
+        <button class="nav-item" id="navFeedBtn" onclick="switchTab('feed')">
+          <span class="nav-icon">📱</span>
+          <span class="nav-text">Rede Social</span>
+          <span class="nav-badge" id="navFeedInteractions">0 ações</span>
+        </button>
+
+        <button class="nav-item" id="navStatsBtn" onclick="switchTab('stats')">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">Estatísticas do Algoritmo</span>
+        </button>
+      </nav>
+
+      <!-- Cartão com status das interações dos alunos -->
+      <div class="sidebar-card">
+        <div class="card-caption">Status das suas ações</div>
+        <div class="card-total-reach">
+          <span class="reach-val" id="sidebarReachValue">0</span>
+          <span class="reach-label">pessoas alcançadas</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="sidebarReachBar" style="width: 0%;"></div>
+        </div>
+        <p class="card-note">Interaja no feed (curta, comente e compartilhe) para ver o impacto nas estatísticas!</p>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="avatar-circle">AL</div>
+        <div class="user-details">
+          <span class="user-name">Aluno Participante</span>
+          <span class="user-info">8º / 9º Ano</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+      <!-- Cabeçalho Mobile -->
+      <div class="mobile-nav">
+        <div class="mobile-logo">RedeLab</div>
+        <div class="mobile-buttons">
+          <button class="m-btn active" onclick="switchTab('oficina')">📘 Oficina</button>
+          <button class="m-btn" onclick="switchTab('feed')">📱 Feed</button>
+          <button class="m-btn" onclick="switchTab('stats')">📊 Estatísticas</button>
+        </div>
+      </div>
+
+      <!-- ================= ABA 1: ROTEIRO DA OFICINA ================= -->
+      <section id="sectionOficina" class="tab-pane active">
+        <header class="content-header hero-header">
+          <span class="section-tag-vibrant">Oficina Prática de Matemática</span>
+          <h2 class="hero-title">Como os Algoritmos Controlam o que Você Vê?</h2>
+          <p class="hero-lead">
+            Você já teve a sensação de que o celular está adivinhando seus pensamentos? Descubra a matemática secreta das redes sociais que decide o que bomba e o que desaparece do seu feed!
+          </p>
+        </header>
+
+        <div class="modules-stack">
+          <!-- Passo 1: Grafos -->
+          <article class="content-card step-card">
+            <div class="card-top-vibrant">
+              <span class="step-badge step-1">Passo 1</span>
+              <h3 class="step-title">O Mapa Secreto da Rede: O que é um Grafo?</h3>
+            </div>
+            <div class="card-body">
+              <p class="lead-text">
+                O seu feed não é uma lista aleatória de fotos e vídeos. Para o computador, a internet inteira é um <strong>Grafo</strong>: um gigantesco mapa de conexões feito de <strong>bolinhas</strong> (pessoas) ligadas por <strong>linhas</strong> (amizades e conversas).
+              </p>
+              
+              <div class="cards-duo">
+                <div class="info-card-colored blue-accent">
+                  <div class="ic-icon">🔵</div>
+                  <div class="ic-content">
+                    <h4>Cada pessoa é um Ponto (Vértice)</h4>
+                    <p>Você, seus amigos da escola, aquele influenciador que você segue e até páginas oficiais são pontos espalhados nesse mapa.</p>
+                  </div>
+                </div>
+
+                <div class="info-card-colored purple-accent">
+                  <div class="ic-icon">⚡</div>
+                  <div class="ic-content">
+                    <h4>A Linha Fica Mais Grossa quando Você Interage!</h4>
+                    <p>Se você conversa todo dia com alguém, a matemática dá um <strong>peso alto</strong> para essa linha. Para o algoritmo, vocês dois viram prioridade máxima.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SVG 1: Grafo Redesenhado com Cores Vivas e Linhas Sólidas Claras -->
+              <div class="svg-showcase">
+                <div class="svg-showcase-bar">
+                  <span class="svg-title-badge">🗺️ Mapa Visual de Conexões</span>
+                  <span class="svg-instruction">Clique nos círculos coloridos para ver quem é quem!</span>
+                </div>
+                <svg viewBox="0 0 700 280" class="interactive-svg">
+                  <!-- Linhas sólidas com espessuras proporcionais aos pesos reais -->
+                  <!-- Linha muito grossa (Melhor Amigo) -->
+                  <line x1="120" y1="140" x2="270" y2="70" stroke="#2563eb" stroke-width="7" stroke-linecap="round" />
+                  
+                  <!-- Linha média (Colega de sala) -->
+                  <line x1="120" y1="140" x2="270" y2="210" stroke="#60a5fa" stroke-width="3" stroke-linecap="round" />
+
+                  <!-- Linha entre colegas -->
+                  <line x1="270" y1="70" x2="430" y2="70" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round" />
+                  <line x1="270" y1="210" x2="430" y2="210" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round" />
+
+                  <!-- A Ponte de Intermediação: Linha destacada em Laranja Sólido -->
+                  <line x1="270" y1="70" x2="430" y2="210" stroke="#ea580c" stroke-width="5" stroke-linecap="round" />
+
+                  <!-- Linhas ligando ao Criador/Canal Grande -->
+                  <line x1="430" y1="70" x2="580" y2="140" stroke="#0284c7" stroke-width="4" stroke-linecap="round" />
+                  <line x1="430" y1="210" x2="580" y2="140" stroke="#0284c7" stroke-width="4" stroke-linecap="round" />
+
+                  <!-- Rótulos flutuantes informativos -->
+                  <rect x="135" y="75" width="130" height="24" rx="6" fill="#eff6ff" stroke="#bfdbfe" />
+                  <text x="200" y="91" fill="#1d4ed8" font-size="11" font-weight="700" text-anchor="middle">Linha Grossa (Muito contato)</text>
+
+                  <rect x="290" y="145" width="150" height="24" rx="6" fill="#fff7ed" stroke="#fed7aa" />
+                  <text x="365" y="161" fill="#c2410c" font-size="11" font-weight="700" text-anchor="middle">Ponte entre dois grupos</text>
+
+                  <!-- Círculos Vivos com bordas e sombras -->
+                  <g class="svg-node-interactive" onclick="updateNodeHint('Você: Ponto central de onde partem suas amizades e curtidas na rede')">
+                    <circle cx="120" cy="140" r="28" fill="#2563eb" stroke="#ffffff" stroke-width="4" />
+                    <text x="120" y="146" fill="#ffffff" text-anchor="middle" font-size="13" font-weight="800">Você</text>
+                  </g>
+
+                  <g class="svg-node-interactive" onclick="updateNodeHint('Melhor Amigo: Ligação forte! A linha é grossa porque vocês trocam mensagens todos os dias')">
+                    <circle cx="270" cy="70" r="26" fill="#3b82f6" stroke="#ffffff" stroke-width="3" />
+                    <text x="270" y="75" fill="#ffffff" text-anchor="middle" font-size="11" font-weight="700">Amigo A</text>
+                  </g>
+
+                  <g class="svg-node-interactive" onclick="updateNodeHint('Colega de Turma: Ligação normal, a linha é mais fina pois vocês conversam menos')">
+                    <circle cx="270" cy="210" r="23" fill="#64748b" stroke="#ffffff" stroke-width="3" />
+                    <text x="270" y="215" fill="#ffffff" text-anchor="middle" font-size="11" font-weight="700">Colega B</text>
+                  </g>
+
+                  <g class="svg-node-interactive" onclick="updateNodeHint('Colega dos Games: Faz parte de outro grupo de amigos da escola')">
+                    <circle cx="430" cy="70" r="23" fill="#64748b" stroke="#ffffff" stroke-width="3" />
+                    <text x="430" y="75" fill="#ffffff" text-anchor="middle" font-size="11" font-weight="700">Colega C</text>
+                  </g>
+
+                  <g class="svg-node-interactive" onclick="updateNodeHint('A Ponte: Essa pessoa tem amigos nos dois grupos diferentes. Se ela não passar a informação, um grupo não sabe do outro!')">
+                    <circle cx="430" cy="210" r="26" fill="#ea580c" stroke="#ffffff" stroke-width="3" />
+                    <text x="430" y="215" fill="#ffffff" text-anchor="middle" font-size="11" font-weight="800">Ponte</text>
+                  </g>
+
+                  <g class="svg-node-interactive" onclick="updateNodeHint('Criador / Canal Grande: Perfil popular com milhares de conexões ao mesmo tempo')">
+                    <circle cx="580" cy="140" r="30" fill="#0284c7" stroke="#ffffff" stroke-width="4" />
+                    <text x="580" y="145" fill="#ffffff" text-anchor="middle" font-size="12" font-weight="800">Criador</text>
+                  </g>
+                </svg>
+
+                <div class="interactive-explanation-bar" id="nodeHintBox">
+                  👉 <strong>Toque ou clique em qualquer círculo do mapa acima</strong> para entender o papel dele no grafo!
+                </div>
+              </div>
+
+              <div class="highlight-callout">
+                <span class="callout-emoji">🌍</span>
+                <div>
+                  <strong>O Mundo Pequeno: A Regra dos Poucos Passos</strong>
+                  <p>Você sabia que qualquer pessoa na internet está a apenas cerca de <strong>4 a 5 conexões</strong> de qualquer outra pessoa no planeta? Isso significa que uma mensagem sua poderia chegar a alguém do outro lado do mundo atravessando pouquíssimos amigos!</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Passo 2: Bolhas e Probabilidade -->
+          <article class="content-card step-card">
+            <div class="card-top-vibrant">
+              <span class="step-badge step-2">Passo 2</span>
+              <h3 class="step-title">O Algoritmo Adivinho: Por que as Bolhas se Fecham?</h3>
+            </div>
+            <div class="card-body">
+              <p class="lead-text">
+                Quando você assiste a um vídeo até o final, o aplicativo não precisa de bola de cristal para saber o que você quer ver a seguir. Ele usa <strong>cálculo de probabilidades</strong>:
+              </p>
+
+              <div class="quote-stat-box">
+                <div class="quote-text">
+                  "Se 9 de cada 10 pessoas que curtem as mesmas músicas que você assistiram a este vídeo novo até o fim, a chance matemática de você gostar dele também é de <strong>90%</strong>!"
+                </div>
+              </div>
+
+              <!-- Comparativo Visual Dinâmico -->
+              <div class="versus-grid">
+                <div class="versus-box robot-side">
+                  <div class="v-header">
+                    <span class="v-tag">Feito pelo Algoritmo</span>
+                    <h4>A Bolha de Filtro 🤖</h4>
+                  </div>
+                  <p>O aplicativo percebe o que você mais assiste e <strong>esconde todo o resto</strong>. Ele só te mostra o que você já gosta para garantir que você não feche a tela.</p>
+                </div>
+
+                <div class="versus-box user-side">
+                  <div class="v-header">
+                    <span class="v-tag">Feito por Você</span>
+                    <h4>A Câmara de Eco 🗣️</h4>
+                  </div>
+                  <p>É quando a gente só quer seguir quem concorda 100% com as nossas ideias e bloqueia quem pensa diferente. Assim, parece que todo mundo tem a mesma opinião!</p>
+                </div>
+              </div>
+
+              <!-- SVG 2: Bolha Clara com Cores Vivas e Paredes Bem Definidas -->
+              <div class="svg-showcase">
+                <div class="svg-showcase-bar">
+                  <span class="svg-title-badge">🫧 Como a Bolha Isola o Seu Feed</span>
+                </div>
+                <svg viewBox="0 0 700 220" class="interactive-svg">
+                  <!-- Escudo da Bolha (Borda colorida e preenchimento suave) -->
+                  <circle cx="350" cy="110" r="88" fill="#f0fdf4" stroke="#16a34a" stroke-width="4" />
+                  <text x="350" y="65" fill="#15803d" font-size="13" font-weight="800" text-anchor="middle">SUA BOLHA</text>
+
+                  <!-- Conteúdos dentro da bolha -->
+                  <circle cx="315" cy="110" r="22" fill="#2563eb" />
+                  <text x="315" y="115" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">Memes</text>
+
+                  <circle cx="385" cy="110" r="22" fill="#0284c7" />
+                  <text x="385" y="115" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">Games</text>
+
+                  <circle cx="350" cy="155" r="20" fill="#7c3aed" />
+                  <text x="350" y="160" fill="#ffffff" font-size="10" font-weight="700" text-anchor="middle">Músicas</text>
+
+                  <!-- Conteúdos repelidos do lado esquerdo -->
+                  <g>
+                    <circle cx="110" cy="110" r="28" fill="#fee2e2" stroke="#ef4444" stroke-width="3" />
+                    <text x="110" y="115" fill="#b91c1c" font-size="12" font-weight="700" text-anchor="middle">Ciências</text>
+                    <!-- Seta bloqueada -->
+                    <line x1="145" y1="110" x2="245" y2="110" stroke="#dc2626" stroke-width="3" stroke-linecap="round" />
+                    <polygon points="255,110 240,104 240,116" fill="#dc2626" />
+                    <rect x="155" y="80" width="85" height="22" rx="4" fill="#fef2f2" stroke="#fca5a5" />
+                    <text x="197" y="95" fill="#b91c1c" font-size="10" font-weight="800" text-anchor="middle">Ocultado ✕</text>
+                  </g>
+
+                  <!-- Conteúdos repelidos do lado direito -->
+                  <g>
+                    <circle cx="590" cy="110" r="28" fill="#fee2e2" stroke="#ef4444" stroke-width="3" />
+                    <text x="590" y="115" fill="#b91c1c" font-size="11" font-weight="700" text-anchor="middle">Outra Opinião</text>
+                    <line x1="555" y1="110" x2="455" y2="110" stroke="#dc2626" stroke-width="3" stroke-linecap="round" />
+                    <polygon points="445,110 460,104 460,116" fill="#dc2626" />
+                    <rect x="460" y="80" width="85" height="22" rx="4" fill="#fef2f2" stroke="#fca5a5" />
+                    <text x="502" y="95" fill="#b91c1c" font-size="10" font-weight="800" text-anchor="middle">Bloqueado ✕</text>
+                  </g>
+                </svg>
+              </div>
+
+              <div class="highlight-callout yellow-callout">
+                <span class="callout-emoji">🧠</span>
+                <div>
+                  <strong>O Cérebro Adora Ter Razão! (Viés de Confirmação)</strong>
+                  <p>Todo mundo gosta de ouvir que está certo. Quando o aplicativo só mostra vídeos que confirmam o que você já achava, você acaba acreditando que a escola inteira ou a cidade inteira pensa exatamente como você!</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Passo 3: Quem é o Líder da Rede? -->
+          <article class="content-card step-card">
+            <div class="card-top-vibrant">
+              <span class="step-badge step-3">Passo 3</span>
+              <h3 class="step-title">Quem Tem Mais Poder na Rede? As Três Medidas</h3>
+            </div>
+            <div class="card-body">
+              <p class="lead-text">
+                Ser influente na matemática não é apenas ter um número alto de seguidores. Existem três jeitos diferentes de medir a importância de uma pessoa na rede:
+              </p>
+
+              <div class="power-trio-grid">
+                <div class="trio-card">
+                  <div class="trio-badge">1. Grau</div>
+                  <div class="trio-emoji">⭐</div>
+                  <h4>O Popstar da Turma</h4>
+                  <p>É quem tem muitas amizades diretas. Recebe curtidas muito rápido porque está conectado a um monte de gente ao mesmo tempo.</p>
+                </div>
+
+                <div class="trio-card featured-gold">
+                  <div class="trio-badge gold">2. Intermediação</div>
+                  <div class="trio-emoji">🌉</div>
+                  <h4>A Ponte de Ouro</h4>
+                  <p>É a pessoa que é amiga da galera do esporte e também da turma dos games. Ela é quem decide se a informação viaja de um grupo para o outro!</p>
+                </div>
+
+                <div class="trio-card">
+                  <div class="trio-badge">3. Autoridade</div>
+                  <div class="trio-emoji">👑</div>
+                  <h4>A Conexão VIP</h4>
+                  <p>Não importa ter 500 contas fantasmas te seguindo. Ter uma única conexão com o canal oficial da escola ou de um streamer gigante dá um peso gigante ao seu perfil.</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Passo 4: Atenção, Discussões e Lucro -->
+          <article class="content-card step-card">
+            <div class="card-top-vibrant">
+              <span class="step-badge step-4">Passo 4</span>
+              <h3 class="step-title">Por que a Rede Adora uma Discussão? A Matemática do Lucro</h3>
+            </div>
+            <div class="card-body">
+              <p class="lead-text">
+                Por que as redes sociais são gratuitas? Porque o produto que elas vendem aos anunciantes é o <strong>seu tempo de tela</strong>! Quanto mais minutos você passa vidrado olhando para o celular, mais dinheiro a plataforma fatura.
+              </p>
+
+              <div class="rage-trap-card">
+                <h4>A Armadilha do Duplo Engajamento</h4>
+                <p>Veja o que acontece quando alguém faz uma postagem injusta ou uma provocação boba:</p>
+                
+                <div class="trap-split">
+                  <div class="trap-box like-side">
+                    <span class="t-icon">👍</span>
+                    <div>
+                      <strong>Quem concorda:</strong>
+                      <span>Curte e manda para os colegas.</span>
+                    </div>
+                  </div>
+                  <div class="trap-box angry-side">
+                    <span class="t-icon">😡</span>
+                    <div>
+                      <strong>Quem fica bravo:</strong>
+                      <span>Comenta irritado, rebate e marca amigos para ver o absurdo!</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="trap-reveal">
+                  <strong>O que o algoritmo faz com isso?</strong>
+                  <p>O computador não tem sentimentos. Para a matemática do aplicativo, <strong>1 comentário de briga conta os mesmos pontos que 1 comentário de carinho</strong>! Como as pessoas passam muito tempo digitando e discutindo, o algoritmo entende que o post é um sucesso e empurra a discussão para centenas de outras pessoas.</p>
+                </div>
+              </div>
+
+              <!-- SVG 3: Balança com Física Correta - Pesado DESCE, Leve SOBE -->
+              <div class="svg-showcase">
+                <div class="svg-showcase-bar">
+                  <span class="svg-title-badge">⚖️ A Balança do Algoritmo: A Treta Pesa Mais!</span>
+                </div>
+                <svg viewBox="0 0 700 300" class="interactive-svg">
+                  <!-- Base triangular sólida (apoio central da balança) -->
+                  <polygon points="350,140 320,260 380,260" fill="#334155" />
+                  <rect x="290" y="260" width="120" height="16" rx="6" fill="#1e293b" />
+                  <!-- Pivô central -->
+                  <circle cx="350" cy="138" r="13" fill="#0f172a" stroke="#64748b" stroke-width="3" />
+
+                  <!--
+                    BRAÇO DA BALANÇA:
+                    - Lado ESQUERDO (Post Amigável) = LEVE → ponta sobe → ponto A = (110, 68)
+                    - Lado DIREITO (Treta) = PESADO → ponta desce → ponto B = (590, 208)
+                    A linha passa pelo pivô em (350, 138)
+                  -->
+                  <line x1="110" y1="68" x2="590" y2="208" stroke="#1e293b" stroke-width="10" stroke-linecap="round" />
+                  <!-- Bolinhas coloridas nas pontas -->
+                  <circle cx="110" cy="68" r="7" fill="#2563eb" />
+                  <circle cx="590" cy="208" r="7" fill="#dc2626" />
+
+                  <!-- ===== LADO ESQUERDO: LEVE — ponta sobe em Y=68 ===== -->
+                  <!-- Correntes (descem do ponto da ponta até o prato) -->
+                  <line x1="110" y1="68" x2="55" y2="140" stroke="#94a3b8" stroke-width="2.5" />
+                  <line x1="110" y1="68" x2="165" y2="140" stroke="#94a3b8" stroke-width="2.5" />
+                  <!-- Prato esquerdo (posicionado em Y=140, alto — subido) -->
+                  <ellipse cx="110" cy="140" rx="62" ry="11" fill="#dbeafe" stroke="#3b82f6" stroke-width="2.5" />
+                  <!-- Caixa com texto do post amigável — está acima do prato -->
+                  <rect x="50" y="72" width="120" height="58" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="2" />
+                  <text x="110" y="96" fill="#1d4ed8" font-size="12" font-weight="800" text-anchor="middle">Post Amigável</text>
+                  <text x="110" y="114" fill="#2563eb" font-size="10" font-weight="700" text-anchor="middle">😊 Poucas reações</text>
+                  <text x="110" y="128" fill="#3b82f6" font-size="10" font-weight="700" text-anchor="middle">Leve → Sobe</text>
+                  <!-- Seta para cima -->
+                  <text x="110" y="165" fill="#2563eb" font-size="18" font-weight="900" text-anchor="middle">↑</text>
+                  <rect x="58" y="170" width="104" height="20" rx="4" fill="#dbeafe" stroke="#93c5fd" />
+                  <text x="110" y="184" fill="#1d4ed8" font-size="10" font-weight="800" text-anchor="middle">▲ SOBE (LEVE)</text>
+
+                  <!-- ===== LADO DIREITO: PESADO — ponta desce em Y=208 ===== -->
+                  <!-- Correntes (descem do ponto da ponta até o prato) -->
+                  <line x1="590" y1="208" x2="530" y2="268" stroke="#94a3b8" stroke-width="2.5" />
+                  <line x1="590" y1="208" x2="650" y2="268" stroke="#94a3b8" stroke-width="2.5" />
+                  <!-- Prato direito (posicionado em Y=268, baixo — descido) -->
+                  <ellipse cx="590" cy="268" rx="68" ry="11" fill="#fecaca" stroke="#dc2626" stroke-width="2.5" />
+                  <!-- Caixa com texto da treta — acima do prato -->
+                  <rect x="520" y="180" width="140" height="78" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="2.5" />
+                  <text x="590" y="204" fill="#991b1b" font-size="13" font-weight="800" text-anchor="middle">Discussão / Treta</text>
+                  <text x="590" y="222" fill="#dc2626" font-size="11" font-weight="700" text-anchor="middle">😡 Muitos comentários</text>
+                  <text x="590" y="238" fill="#b91c1c" font-size="10" font-weight="700" text-anchor="middle">Pesado → Desce</text>
+                  <text x="590" y="252" fill="#b91c1c" font-size="9" font-weight="600" text-anchor="middle">(e viraliza mais!)</text>
+                  <!-- Seta para baixo -->
+                  <text x="590" y="292" fill="#dc2626" font-size="14" font-weight="900" text-anchor="middle">▼ DESCE (PESADO)</text>
+
+                  <!-- Rótulo central explicativo -->
+                  <rect x="238" y="10" width="224" height="32" rx="7" fill="#fff7ed" stroke="#fdba74" stroke-width="2" />
+                  <text x="350" y="31" fill="#c2410c" font-size="13" font-weight="800" text-anchor="middle">Raiva e Briga = Peso Máximo!</text>
+                </svg>
+              </div>
+
+              <div class="highlight-callout red-callout">
+                <span class="callout-emoji">💡</span>
+                <div>
+                  <strong>O Seu Superpoder Digital:</strong>
+                  <p>Quando você responde bravo a uma provocação na internet, você não está derrotando o autor da postagem — você está dando de bandeja para o algoritmo o engajamento de que ele precisa para mostrar aquela discussão para a escola inteira!</p>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="next-step-banner-vibrant">
+          <div class="ns-content">
+            <h3>Hora de testar na prática!</h3>
+            <p>Vá para a aba <strong>Rede Social</strong>, interaja com as postagens e depois abra a <strong>Estatísticas do Algoritmo</strong> para ver os resultados!</p>
+          </div>
+          <button class="action-btn-large" onclick="switchTab('feed')">Testar no Feed Agora ➔</button>
+        </div>
+      </section>
+
+      <!-- ================= ABA 2: REDE SOCIAL (FEED) ================= -->
+      <section id="sectionFeed" class="tab-pane">
+        <header class="content-header feed-top">
+          <div>
+            <span class="section-tag">Simulação Interativa</span>
+            <h2>Feed Social da Escola</h2>
+            <p class="section-lead">
+              Todos os posts começam <strong>zerados</strong>. É você quem decide interagir (curtir, comentar e compartilhar). Observe o que acontece com as pontuações!
+            </p>
+          </div>
+          <button class="secondary-btn" onclick="resetAllFeed()">🔄 Resetar para Zero</button>
+        </header>
+
+        <div class="feed-container">
+          <!-- Post 1: Amigável / Gincana da Escola -->
+          <article class="post-card" id="postCard-1">
+            <div class="post-header">
+              <div class="avatar-circle post-av">LG</div>
+              <div class="author-meta">
+                <span class="author-name">Lucas Gabriel (9º B)</span>
+                <span class="post-timestamp">Postado há 15 minutos</span>
+              </div>
+            </div>
+
+            <div class="post-text">
+              Quem aí vai ajudar a decorar a sala para a Gincana Cultural na sexta-feira? Precisamos de ideias para o tema e de cartolinas coloridas! 🎨🎉
+            </div>
+
+            <div class="post-stats-strip">
+              <span id="statLikes-1">❤️ <strong>0</strong> curtidas</span>
+              <span id="statComments-1">💬 <strong>0</strong> comentários</span>
+              <span id="statShares-1">🚀 <strong>0</strong> compartilhamentos</span>
+            </div>
+
+            <div class="post-buttons-row">
+              <button class="action-btn" id="btnLike-1" onclick="toggleLike(1)">
+                <span class="btn-icon">🤍</span> <span class="btn-label">Curtir</span>
+              </button>
+              <button class="action-btn" id="btnShare-1" onclick="sharePost(1)">
+                <span class="btn-icon">🚀</span> <span class="btn-label">Compartilhar</span>
+              </button>
+            </div>
+
+            <div class="comments-container" id="commentsArea-1"></div>
+
+            <div class="comment-input-row">
+              <input type="text" placeholder="Escreva um comentário..." id="commentInput-1" onkeypress="if(event.key==='Enter') submitComment(1)">
+              <button class="send-btn" onclick="submitComment(1)">Comentar</button>
+            </div>
+          </article>
+
+          <!-- Post 2: Misoginia / Preconceito contra garotas nos esportes da escola -->
+          <article class="post-card" id="postCard-2">
+            <div class="post-header">
+              <div class="avatar-circle post-av">TA</div>
+              <div class="author-meta">
+                <span class="author-name">Thiago Alves (9º A)</span>
+                <span class="post-timestamp">Postado há 28 minutos</span>
+              </div>
+            </div>
+
+            <div class="post-text">
+              Menina não entende nada de futebol nem de basquete na educação física, só servem pra ficar atrapalhando o jogo e reclamando da bola. Lugar de garota é na arquibancada torcendo pros meninos jogarem de verdade! 🥱⚽
+            </div>
+
+            <div class="post-stats-strip">
+              <span id="statLikes-2">❤️ <strong>0</strong> curtidas</span>
+              <span id="statComments-2">💬 <strong>0</strong> comentários</span>
+              <span id="statShares-2">🚀 <strong>0</strong> compartilhamentos</span>
+            </div>
+
+            <div class="post-buttons-row">
+              <button class="action-btn" id="btnLike-2" onclick="toggleLike(2)">
+                <span class="btn-icon">🤍</span> <span class="btn-label">Curtir</span>
+              </button>
+              <button class="action-btn" id="btnShare-2" onclick="sharePost(2)">
+                <span class="btn-icon">🚀</span> <span class="btn-label">Compartilhar</span>
+              </button>
+            </div>
+
+            <div class="comments-container" id="commentsArea-2"></div>
+
+            <div class="comment-input-row">
+              <input type="text" placeholder="Escreva um comentário..." id="commentInput-2" onkeypress="if(event.key==='Enter') submitComment(2)">
+              <button class="send-btn" onclick="submitComment(2)">Comentar</button>
+            </div>
+          </article>
+
+          <!-- Post 3: Amigável / Trabalho em Grupo de Ciências -->
+          <article class="post-card" id="postCard-3">
+            <div class="post-header">
+              <div class="avatar-circle post-av">MP</div>
+              <div class="author-meta">
+                <span class="author-name">Marina Pereira (8º A)</span>
+                <span class="post-timestamp">Postado há 40 minutos</span>
+              </div>
+            </div>
+
+            <div class="post-text">
+              Terminamos a maquete de ciências com materiais reciclados! Ficou muito melhor do que a gente esperava kkkk 🚀🌎 Valeu a pena passar a tarde inteira montando.
+            </div>
+
+            <div class="post-stats-strip">
+              <span id="statLikes-3">❤️ <strong>0</strong> curtidas</span>
+              <span id="statComments-3">💬 <strong>0</strong> comentários</span>
+              <span id="statShares-3">🚀 <strong>0</strong> compartilhamentos</span>
+            </div>
+
+            <div class="post-buttons-row">
+              <button class="action-btn" id="btnLike-3" onclick="toggleLike(3)">
+                <span class="btn-icon">🤍</span> <span class="btn-label">Curtir</span>
+              </button>
+              <button class="action-btn" id="btnShare-3" onclick="sharePost(3)">
+                <span class="btn-icon">🚀</span> <span class="btn-label">Compartilhar</span>
+              </button>
+            </div>
+
+            <div class="comments-container" id="commentsArea-3"></div>
+
+            <div class="comment-input-row">
+              <input type="text" placeholder="Escreva um comentário..." id="commentInput-3" onkeypress="if(event.key==='Enter') submitComment(3)">
+              <button class="send-btn" onclick="submitComment(3)">Comentar</button>
+            </div>
+          </article>
+
+          <!-- Post 4: Discurso de Ódio / Preconceito e Exclusão contra Alunos Novos -->
+          <article class="post-card" id="postCard-4">
+            <div class="post-header">
+              <div class="avatar-circle post-av">GF</div>
+              <div class="author-meta">
+                <span class="author-name">Gabriel Fonseca (9º C)</span>
+                <span class="post-timestamp">Postado há 55 minutos</span>
+              </div>
+            </div>
+
+            <div class="post-text">
+              Esse pessoal que chegou agora, transferido no meio do ano, nem devia estar estudando aqui na nossa escola. São esquisitos, só arrumam confusão e vieram atrapalhar as turmas que já estavam formadas. Quem concorda deixa o like! 🤮👎
+            </div>
+
+            <div class="post-stats-strip">
+              <span id="statLikes-4">❤️ <strong>0</strong> curtidas</span>
+              <span id="statComments-4">💬 <strong>0</strong> comentários</span>
+              <span id="statShares-4">🚀 <strong>0</strong> compartilhamentos</span>
+            </div>
+
+            <div class="post-buttons-row">
+              <button class="action-btn" id="btnLike-4" onclick="toggleLike(4)">
+                <span class="btn-icon">🤍</span> <span class="btn-label">Curtir</span>
+              </button>
+              <button class="action-btn" id="btnShare-4" onclick="sharePost(4)">
+                <span class="btn-icon">🚀</span> <span class="btn-label">Compartilhar</span>
+              </button>
+            </div>
+
+            <div class="comments-container" id="commentsArea-4"></div>
+
+            <div class="comment-input-row">
+              <input type="text" placeholder="Escreva um comentário..." id="commentInput-4" onkeypress="if(event.key==='Enter') submitComment(4)">
+              <button class="send-btn" onclick="submitComment(4)">Comentar</button>
+            </div>
+          </article>
+
+          <!-- Post 5: Provocação Escolar / Disputa de Turnos -->
+          <article class="post-card" id="postCard-5">
+            <div class="post-header">
+              <div class="avatar-circle post-av">ES</div>
+              <div class="author-meta">
+                <span class="author-name">Enzo Santos (9º A)</span>
+                <span class="post-timestamp">Postado há 1 hora</span>
+              </div>
+            </div>
+
+            <div class="post-text">
+              A real é que a turma da manhã é muito mais esforçada e sempre ganha em tudo. A galera da tarde não tem disciplina nenhuma e só faz bagunça no intervalo. Podem chorar nos comentários! 🥱🏆
+            </div>
+
+            <div class="post-stats-strip">
+              <span id="statLikes-5">❤️ <strong>0</strong> curtidas</span>
+              <span id="statComments-5">💬 <strong>0</strong> comentários</span>
+              <span id="statShares-5">🚀 <strong>0</strong> compartilhamentos</span>
+            </div>
+
+            <div class="post-buttons-row">
+              <button class="action-btn" id="btnLike-5" onclick="toggleLike(5)">
+                <span class="btn-icon">🤍</span> <span class="btn-label">Curtir</span>
+              </button>
+              <button class="action-btn" id="btnShare-5" onclick="sharePost(5)">
+                <span class="btn-icon">🚀</span> <span class="btn-label">Compartilhar</span>
+              </button>
+            </div>
+
+            <div class="comments-container" id="commentsArea-5"></div>
+
+            <div class="comment-input-row">
+              <input type="text" placeholder="Escreva um comentário..." id="commentInput-5" onkeypress="if(event.key==='Enter') submitComment(5)">
+              <button class="send-btn" onclick="submitComment(5)">Comentar</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ================= ABA 3: ESTATÍSTICAS ================= -->
+      <section id="sectionStats" class="tab-pane">
+        <header class="content-header">
+          <span class="section-tag">Painel Matemático</span>
+          <h2>A Caixa-Preta do Algoritmo Revelada</h2>
+          <p class="section-lead">
+            Veja exatamente como cada ação que você fez no Feed foi calculada pela fórmula matemática e para quantos usuários fictícios cada publicação foi entregue.
+          </p>
+        </header>
+
+        <!-- Tabela de Pesos -->
+        <div class="content-card">
+          <div class="card-top">
+            <h3>⚖️ Os Pesos da Fórmula de Engajamento</h3>
+          </div>
+          <div class="weights-row">
+            <div class="weight-item">
+              <span class="w-symbol">❤️ Curtida</span>
+              <span class="w-points">+2 pts</span>
+              <span class="w-desc">Ação rápida e de baixo esforço.</span>
+            </div>
+            <div class="weight-item">
+              <span class="w-symbol">💬 Comentário</span>
+              <span class="w-points highlight">+8 pts</span>
+              <span class="w-desc">Exige pensar, digitar e segurar você na tela.</span>
+            </div>
+            <div class="weight-item">
+              <span class="w-symbol">🔁 Resposta</span>
+              <span class="w-points highlight">+12 pts</span>
+              <span class="w-desc">Gera debate ou discussão contínua.</span>
+            </div>
+            <div class="weight-item">
+              <span class="w-symbol">🚀 Compartilhar</span>
+              <span class="w-points viral">+20 pts</span>
+              <span class="w-desc">Fura a bolha e atrai novos usuários.</span>
+            </div>
+          </div>
+
+          <div class="formula-banner">
+            <strong>Fórmula da Pontuação (P):</strong>
+            <code>P = (Curtidas × 2) + (Comentários × 8) + (Respostas × 12) + (Curtidas em Comentários × 1) + (Compartilhamentos × 20)</code>
+          </div>
+        </div>
+
+        <!-- Resultados e Projeção de Alcance -->
+        <div class="content-card">
+          <div class="card-top">
+            <h3>👥 Alcance para Usuários Fictícios (Base de 10.000 pessoas)</h3>
+            <span class="card-sub-info">Valores atualizados em tempo real com as suas interações</span>
+          </div>
+
+          <div class="stats-table">
+            <!-- Linha Post 1 -->
+            <div class="stat-row">
+              <div class="stat-info">
+                <strong>Post 1: Gincana Cultural (Lucas Gabriel)</strong>
+                <span class="stat-meta" id="statMeta-1">0 curtidas • 0 comentários • 0 compartilhamentos</span>
+              </div>
+              <div class="stat-values">
+                <span class="points-pill" id="statPoints-1">0 pts</span>
+                <span class="reach-pill" id="statReach-1">0 pessoas</span>
+              </div>
+              <div class="stat-bar-container">
+                <div class="stat-bar-fill" id="statBar-1" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <!-- Linha Post 2 (Misoginia) -->
+            <div class="stat-row">
+              <div class="stat-info">
+                <strong>Post 2: Ataque às Garotas nos Esportes (Thiago Alves)</strong>
+                <span class="stat-meta" id="statMeta-2">0 curtidas • 0 comentários • 0 compartilhamentos</span>
+              </div>
+              <div class="stat-values">
+                <span class="points-pill" id="statPoints-2">0 pts</span>
+                <span class="reach-pill" id="statReach-2">0 pessoas</span>
+              </div>
+              <div class="stat-bar-container">
+                <div class="stat-bar-fill" id="statBar-2" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <!-- Linha Post 3 (Trabalho de Ciências) -->
+            <div class="stat-row">
+              <div class="stat-info">
+                <strong>Post 3: Maquete de Ciências (Marina Pereira)</strong>
+                <span class="stat-meta" id="statMeta-3">0 curtidas • 0 comentários • 0 compartilhamentos</span>
+              </div>
+              <div class="stat-values">
+                <span class="points-pill" id="statPoints-3">0 pts</span>
+                <span class="reach-pill" id="statReach-3">0 pessoas</span>
+              </div>
+              <div class="stat-bar-container">
+                <div class="stat-bar-fill" id="statBar-3" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <!-- Linha Post 4 (Discurso de Ódio / Exclusão) -->
+            <div class="stat-row">
+              <div class="stat-info">
+                <strong>Post 4: Preconceito contra Bolsistas (Gabriel Fonseca)</strong>
+                <span class="stat-meta" id="statMeta-4">0 curtidas • 0 comentários • 0 compartilhamentos</span>
+              </div>
+              <div class="stat-values">
+                <span class="points-pill" id="statPoints-4">0 pts</span>
+                <span class="reach-pill" id="statReach-4">0 pessoas</span>
+              </div>
+              <div class="stat-bar-container">
+                <div class="stat-bar-fill" id="statBar-4" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <!-- Linha Post 5 (Provocação de Turnos) -->
+            <div class="stat-row">
+              <div class="stat-info">
+                <strong>Post 5: Provocação Manhã vs. Tarde (Enzo Santos)</strong>
+                <span class="stat-meta" id="statMeta-5">0 curtidas • 0 comentários • 0 compartilhamentos</span>
+              </div>
+              <div class="stat-values">
+                <span class="points-pill" id="statPoints-5">0 pts</span>
+                <span class="reach-pill" id="statReach-5">0 pessoas</span>
+              </div>
+              <div class="stat-bar-container">
+                <div class="stat-bar-fill" id="statBar-5" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conclusão da dinâmica -->
+        <div class="analysis-card">
+          <h4>🔍 O que estes números mostram para a turma?</h4>
+          <p>
+            Perceba que quanto mais comentários e respostas uma publicação recebe, mais rápido a barra de alcance sobe. Se você passar mais tempo rebatendo um post provocativo ou com comentários indignados, é exatamente esse post que o algoritmo apresentará para o maior número de pessoas fictícias na rede!
+          </p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div id="toastNotification" class="toast hidden"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
