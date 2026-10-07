@@ -1,23 +1,42 @@
 /**
- * RedeLab — Sincronização em Tempo Real com Firebase Realtime Database
- * Todos os dispositivos na sala veem as mesmas interações ao vivo.
+ * RedeLab — Sincronização via JSONBin.io
+ * API de JSON gratuita, sem SDK. Polling a cada 3s para sincronizar
+ * todos os dispositivos conectados ao GitHub Pages.
  *
- * ⚙️  CONFIGURAÇÃO: preencha FIREBASE_CONFIG com os dados do seu projeto.
- *     Guia completo em: https://console.firebase.google.com/
+ * ⚙️  CONFIGURAÇÃO (2 valores apenas):
+ *   1. Acesse https://jsonbin.io → crie conta gratuita
+ *   2. Clique em "CREATE BIN" → cole o JSON inicial abaixo → salve
+ *   3. Copie o BIN_ID (aparece na URL) e a MASTER_KEY (menu API Keys)
+ *   4. Cole os dois valores nas constantes abaixo
  */
 
 // ============================================================
-// ⚙️  COLE AQUI OS DADOS DO SEU PROJETO FIREBASE
+// ⚙️  SUAS CREDENCIAIS JSONBIN
 // ============================================================
-const FIREBASE_CONFIG = {
-  apiKey:            "COLE_SUA_API_KEY",
-  authDomain:        "SEU_PROJETO.firebaseapp.com",
-  databaseURL:       "https://SEU_PROJETO-default-rtdb.firebaseio.com",
-  projectId:         "SEU_PROJETO",
-  storageBucket:     "SEU_PROJETO.appspot.com",
-  messagingSenderId: "SEU_SENDER_ID",
-  appId:             "SEU_APP_ID"
+const BIN_ID     = 'COLE_SEU_BIN_ID_AQUI';    // ex: "64f3a1b2..."
+const MASTER_KEY = 'COLE_SUA_MASTER_KEY_AQUI'; // ex: "$2a$10$..."
+const POLL_MS    = 3000; // Verifica novos dados a cada 3 segundos
+// ============================================================
+
+const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+const HEADERS = {
+  'Content-Type': 'application/json',
+  'X-Master-Key': MASTER_KEY,
+  'X-Bin-Versioning': 'false'  // Desativa versionamento para simplificar
 };
+
+// ============================================================
+// JSON INICIAL — cole este conteúdo ao criar seu Bin no JSONBin.io
+// ============================================================
+// {
+//   "posts": {
+//     "1": { "likes": 0, "shares": 0, "comments": [] },
+//     "2": { "likes": 0, "shares": 0, "comments": [] },
+//     "3": { "likes": 0, "shares": 0, "comments": [] },
+//     "4": { "likes": 0, "shares": 0, "comments": [] },
+//     "5": { "likes": 0, "shares": 0, "comments": [] }
+//   }
+// }
 // ============================================================
 
 const TOTAL_FICTITIOUS_USERS = 10000;
@@ -30,7 +49,6 @@ const WEIGHTS = {
   SHARE:        20
 };
 
-// Metadados locais — não precisam ir ao banco
 const POST_META = {
   1: { reachFactor: 8.0  },
   2: { reachFactor: 15.5 },
@@ -39,147 +57,161 @@ const POST_META = {
   5: { reachFactor: 13.0 }
 };
 
-// Estrutura zerada para reset
 function getZeroState() {
-  const s = {};
+  const s = { posts: {} };
   for (let i = 1; i <= 5; i++) {
-    s[i] = { likes: 0, shares: 0, comments: {} };
+    s.posts[i] = { likes: 0, shares: 0, comments: [] };
   }
   return s;
 }
 
-// Referência global ao nó do Firebase
-let postsRef = null;
-// Cópia local dos dados mais recentes recebidos do Firebase
-let currentData = getZeroState();
+// Estado local em memória (atualizado pelo polling)
+let localState = getZeroState();
+// Flag para saber se o JSONBin está configurado
+const IS_CONFIGURED = BIN_ID !== 'COLE_SEU_BIN_ID_AQUI';
 
 // ============================================================
-// Inicialização
+// Comunicação com JSONBin.io
 // ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-  const isConfigured = FIREBASE_CONFIG.apiKey !== 'COLE_SUA_API_KEY';
 
-  if (isConfigured) {
-    try {
-      firebase.initializeApp(FIREBASE_CONFIG);
-      const db  = firebase.database();
-      postsRef  = db.ref('oficina/posts');
+async function readState() {
+  try {
+    const res  = await fetch(API_URL, { headers: HEADERS });
+    const json = await res.json();
+    return json.record || getZeroState();
+  } catch (e) {
+    console.warn('Leitura falhou:', e);
+    return localState;
+  }
+}
 
-      // Escuta todas as mudanças em tempo real
-      postsRef.on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (!data) {
-          // Primeira vez: grava o estado zerado no banco
-          postsRef.set(getZeroState());
-          return;
-        }
-        currentData = data;
-        renderAll(data);
-        updateAllCalculations(data);
-      });
-    } catch (e) {
-      console.error('Erro ao inicializar Firebase:', e);
-      fallbackLocal();
-    }
+async function writeState(newState) {
+  try {
+    await fetch(API_URL, {
+      method:  'PUT',
+      headers: HEADERS,
+      body:    JSON.stringify(newState)
+    });
+    localState = newState;
+  } catch (e) {
+    console.warn('Gravação falhou:', e);
+  }
+}
+
+// ============================================================
+// Inicialização e Polling
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (IS_CONFIGURED) {
+    // Carrega o estado atual do servidor
+    const data = await readState();
+    localState = data;
+    renderAll(data);
+    updateAllCalculations(data);
+    // Inicia polling — verifica atualizações a cada POLL_MS ms
+    setInterval(async () => {
+      const fresh = await readState();
+      localState  = fresh;
+      renderAll(fresh);
+      updateAllCalculations(fresh);
+    }, POLL_MS);
   } else {
-    // Firebase não configurado — modo local (um dispositivo)
-    fallbackLocal();
+    // Modo local: funciona sem JSONBin
+    renderAll(localState);
+    updateAllCalculations(localState);
   }
 });
 
-function fallbackLocal() {
-  console.warn('Firebase não configurado. Rodando em modo local.');
-  renderAll(currentData);
-  updateAllCalculations(currentData);
-}
-
 // ============================================================
-// Ações do usuário → escrevem no Firebase
+// Ações do usuário
 // ============================================================
 
-function toggleLike(postId) {
-  if (postsRef) {
-    postsRef.child(`${postId}/likes`).transaction(n => (n || 0) + 1);
-  } else {
-    currentData[postId].likes += 1;
-    renderAll(currentData);
-    updateAllCalculations(currentData);
-  }
+async function toggleLike(postId) {
+  const state = IS_CONFIGURED ? await readState() : localState;
+  state.posts[postId].likes = (state.posts[postId].likes || 0) + 1;
+  if (IS_CONFIGURED) await writeState(state);
+  else { localState = state; }
+  renderAll(state);
+  updateAllCalculations(state);
   showToast('❤️ Post curtido!');
 }
 
-function sharePost(postId) {
-  if (postsRef) {
-    postsRef.child(`${postId}/shares`).transaction(n => (n || 0) + 1);
-  } else {
-    currentData[postId].shares += 1;
-    renderAll(currentData);
-    updateAllCalculations(currentData);
-  }
+async function sharePost(postId) {
+  const state = IS_CONFIGURED ? await readState() : localState;
+  state.posts[postId].shares = (state.posts[postId].shares || 0) + 1;
+  if (IS_CONFIGURED) await writeState(state);
+  else { localState = state; }
+  renderAll(state);
+  updateAllCalculations(state);
   showToast('🚀 Post compartilhado!');
 }
 
-function submitComment(postId) {
+async function submitComment(postId) {
   const input = document.getElementById(`commentInput-${postId}`);
   if (!input) return;
   const text = input.value.trim();
   if (!text) return;
 
-  const newComment = { author: 'Aluno Participante', text, likes: 0, replies: {} };
+  const state   = IS_CONFIGURED ? await readState() : localState;
+  const newComment = {
+    id:      Date.now(),
+    author: 'Aluno Participante',
+    text,
+    likes:   0,
+    replies: []
+  };
 
-  if (postsRef) {
-    postsRef.child(`${postId}/comments`).push(newComment);
-  } else {
-    const id = `c${Date.now()}`;
-    if (!currentData[postId].comments) currentData[postId].comments = {};
-    currentData[postId].comments[id] = newComment;
-    renderAll(currentData);
-    updateAllCalculations(currentData);
+  if (!Array.isArray(state.posts[postId].comments)) {
+    state.posts[postId].comments = [];
   }
+  state.posts[postId].comments.push(newComment);
+
+  if (IS_CONFIGURED) await writeState(state);
+  else { localState = state; }
+  renderAll(state);
+  updateAllCalculations(state);
 
   input.value = '';
   showToast('💬 Comentário enviado!');
 }
 
-function likeComment(postId, commentId) {
-  if (postsRef) {
-    postsRef.child(`${postId}/comments/${commentId}/likes`).transaction(n => (n || 0) + 1);
-  } else {
-    const c = currentData[postId].comments[commentId];
-    if (c) { c.likes = (c.likes || 0) + 1; }
-    renderAll(currentData);
-    updateAllCalculations(currentData);
-  }
+async function likeComment(postId, commentId) {
+  const state   = IS_CONFIGURED ? await readState() : localState;
+  const comment = (state.posts[postId].comments || []).find(c => c.id === commentId);
+  if (comment) comment.likes = (comment.likes || 0) + 1;
+  if (IS_CONFIGURED) await writeState(state);
+  else { localState = state; }
+  renderAll(state);
+  updateAllCalculations(state);
   showToast('❤️ Curtida no comentário!');
 }
 
-function submitReply(postId, commentId) {
+async function submitReply(postId, commentId) {
   const input = document.getElementById(`replyInput-${postId}-${commentId}`);
   if (!input) return;
   const text = input.value.trim();
   if (!text) return;
 
-  const reply = { author: 'Aluno Participante', text };
-
-  if (postsRef) {
-    postsRef.child(`${postId}/comments/${commentId}/replies`).push(reply);
-  } else {
-    const c = currentData[postId].comments[commentId];
-    if (c) {
-      if (!c.replies) c.replies = {};
-      c.replies[`r${Date.now()}`] = reply;
-    }
-    renderAll(currentData);
-    updateAllCalculations(currentData);
+  const state   = IS_CONFIGURED ? await readState() : localState;
+  const comment = (state.posts[postId].comments || []).find(c => c.id === commentId);
+  if (comment) {
+    if (!Array.isArray(comment.replies)) comment.replies = [];
+    comment.replies.push({ id: Date.now(), author: 'Aluno Participante', text });
   }
+
+  if (IS_CONFIGURED) await writeState(state);
+  else { localState = state; }
 
   const row = document.getElementById(`replyRow-${postId}-${commentId}`);
   if (row) row.style.display = 'none';
   input.value = '';
+
+  renderAll(state);
+  updateAllCalculations(state);
   showToast('🔁 Resposta enviada!');
 }
 
-// Abre/fecha caixa de resposta (apenas local — sem Firebase)
 function toggleReplyBox(postId, commentId) {
   const row = document.getElementById(`replyRow-${postId}-${commentId}`);
   if (!row) return;
@@ -190,43 +222,37 @@ function toggleReplyBox(postId, commentId) {
   }
 }
 
-// Reset: sobrescreve o nó do Firebase com zeros
-function resetAllFeed() {
+async function resetAllFeed() {
   const zero = getZeroState();
-  if (postsRef) {
-    postsRef.set(zero);
-  } else {
-    currentData = zero;
-    renderAll(currentData);
-    updateAllCalculations(currentData);
-  }
+  if (IS_CONFIGURED) await writeState(zero);
+  localState = zero;
+  renderAll(zero);
+  updateAllCalculations(zero);
   showToast('🔄 Todos os posts foram zerados com sucesso!');
 }
 
 // ============================================================
-// Renderização — atualiza o DOM a partir dos dados do Firebase
+// Renderização
 // ============================================================
 
 function renderAll(data) {
   for (let id = 1; id <= 5; id++) {
-    const post = (data && data[id]) || { likes: 0, shares: 0, comments: {} };
+    const post = (data.posts && data.posts[id]) || { likes: 0, shares: 0, comments: [] };
     renderPostStats(id, post);
-    renderCommentsList(id, post.comments || {});
+    renderCommentsList(id, post.comments || []);
   }
 }
 
 function renderPostStats(postId, post) {
   const likes    = post.likes   || 0;
   const shares   = post.shares  || 0;
-  const comments = post.comments || {};
+  const comments = Array.isArray(post.comments) ? post.comments : [];
 
-  let totalComments = 0;
-  let totalReplies  = 0;
-  Object.values(comments).forEach(c => {
-    totalComments++;
-    totalReplies += Object.keys(c.replies || {}).length;
+  let totalCount = 0;
+  comments.forEach(c => {
+    totalCount++;
+    totalCount += (c.replies || []).length;
   });
-  const totalCount = totalComments + totalReplies;
 
   const sLikes    = document.getElementById(`statLikes-${postId}`);
   const sComments = document.getElementById(`statComments-${postId}`);
@@ -239,21 +265,19 @@ function renderPostStats(postId, post) {
   const btnLike = document.getElementById(`btnLike-${postId}`);
   if (btnLike) {
     btnLike.classList.toggle('liked', likes > 0);
-    btnLike.querySelector('.btn-icon').innerText = likes > 0 ? '❤️' : '🤍';
+    btnLike.querySelector('.btn-icon').innerText  = likes > 0 ? '❤️' : '🤍';
     btnLike.querySelector('.btn-label').innerText = likes > 0 ? `Curtido (${likes})` : 'Curtir';
   }
 
   const btnShare = document.getElementById(`btnShare-${postId}`);
-  if (btnShare) {
-    btnShare.classList.toggle('shared', shares > 0);
-  }
+  if (btnShare) btnShare.classList.toggle('shared', shares > 0);
 }
 
 function renderCommentsList(postId, comments) {
   const container = document.getElementById(`commentsArea-${postId}`);
   if (!container) return;
 
-  // Preserva reply boxes que estavam abertos
+  // Preserva reply boxes abertos antes de re-renderizar
   const openBoxes = new Set();
   container.querySelectorAll('.reply-input-row').forEach(row => {
     if (row.style.display !== 'none' && row.id) openBoxes.add(row.id);
@@ -261,23 +285,22 @@ function renderCommentsList(postId, comments) {
 
   container.innerHTML = '';
 
-  Object.entries(comments).forEach(([commentId, c]) => {
-    const replies      = c.replies || {};
-    const replyEntries = Object.entries(replies);
-    const replyRowId   = `replyRow-${postId}-${commentId}`;
-    const wasOpen      = openBoxes.has(replyRowId);
+  (comments || []).forEach(c => {
+    const replies    = c.replies || [];
+    const replyRowId = `replyRow-${postId}-${c.id}`;
+    const wasOpen    = openBoxes.has(replyRowId);
 
     let repliesHtml = '';
-    if (replyEntries.length > 0) {
+    if (replies.length > 0) {
       repliesHtml = `<div class="replies-thread">` +
-        replyEntries.map(([, r]) =>
+        replies.map(r =>
           `<div class="reply-item"><strong>${escapeHtml(r.author)}:</strong> ${escapeHtml(r.text)}</div>`
         ).join('') +
         `</div>`;
     }
 
-    const likesCount = c.likes || 0;
-    const card = document.createElement('div');
+    const cLikes = c.likes || 0;
+    const card   = document.createElement('div');
     card.className = 'comment-card';
     card.innerHTML = `
       <div class="c-header">
@@ -285,20 +308,20 @@ function renderCommentsList(postId, comments) {
       </div>
       <div class="c-body-text">${escapeHtml(c.text)}</div>
       <div class="c-actions-row">
-        <button class="c-like-btn${likesCount > 0 ? ' liked' : ''}"
-                onclick="likeComment(${postId}, '${commentId}')">
-          ❤️ ${likesCount} ${likesCount === 1 ? 'curtida' : 'curtidas'}
+        <button class="c-like-btn${cLikes > 0 ? ' liked' : ''}"
+                onclick="likeComment(${postId}, ${c.id})">
+          ❤️ ${cLikes} ${cLikes === 1 ? 'curtida' : 'curtidas'}
         </button>
-        <button class="c-reply-btn" onclick="toggleReplyBox(${postId}, '${commentId}')">
+        <button class="c-reply-btn" onclick="toggleReplyBox(${postId}, ${c.id})">
           Responder
         </button>
       </div>
       ${repliesHtml}
       <div class="reply-input-row" id="${replyRowId}" style="display:${wasOpen ? 'flex' : 'none'};">
         <input type="text" placeholder="Escreva sua resposta..."
-               id="replyInput-${postId}-${commentId}"
-               onkeypress="if(event.key==='Enter') submitReply(${postId}, '${commentId}')">
-        <button onclick="submitReply(${postId}, '${commentId}')">Enviar</button>
+               id="replyInput-${postId}-${c.id}"
+               onkeypress="if(event.key==='Enter') submitReply(${postId}, ${c.id})">
+        <button onclick="submitReply(${postId}, ${c.id})">Enviar</button>
       </div>
     `;
     container.appendChild(card);
@@ -306,39 +329,35 @@ function renderCommentsList(postId, comments) {
 }
 
 // ============================================================
-// Cálculo de estatísticas
+// Estatísticas
 // ============================================================
 
 function updateAllCalculations(data) {
-  data = data || currentData;
-
-  let totalInteractionsCount = 0;
-  let maxReach = 0;
+  let totalInteractions = 0;
+  let maxReach          = 0;
 
   for (let id = 1; id <= 5; id++) {
-    const post     = (data && data[id]) || { likes: 0, shares: 0, comments: {} };
+    const post     = (data.posts && data.posts[id]) || { likes: 0, shares: 0, comments: [] };
     const likes    = post.likes  || 0;
     const shares   = post.shares || 0;
-    const comments = post.comments || {};
+    const comments = Array.isArray(post.comments) ? post.comments : [];
 
-    let commentsCount    = 0;
-    let repliesCount     = 0;
+    let commentsCount     = comments.length;
+    let repliesCount      = 0;
     let commentLikesCount = 0;
-
-    Object.values(comments).forEach(c => {
-      commentsCount++;
+    comments.forEach(c => {
       commentLikesCount += c.likes || 0;
-      repliesCount      += Object.keys(c.replies || {}).length;
+      repliesCount      += (c.replies || []).length;
     });
 
-    totalInteractionsCount += likes + commentsCount + repliesCount + commentLikesCount + shares;
+    totalInteractions += likes + commentsCount + repliesCount + commentLikesCount + shares;
 
     const score =
-      (likes           * WEIGHTS.LIKE)          +
-      (commentsCount   * WEIGHTS.COMMENT)        +
-      (repliesCount    * WEIGHTS.REPLY)          +
-      (commentLikesCount * WEIGHTS.COMMENT_LIKE) +
-      (shares          * WEIGHTS.SHARE);
+      (likes             * WEIGHTS.LIKE)          +
+      (commentsCount     * WEIGHTS.COMMENT)        +
+      (repliesCount      * WEIGHTS.REPLY)          +
+      (commentLikesCount * WEIGHTS.COMMENT_LIKE)   +
+      (shares            * WEIGHTS.SHARE);
 
     let reach = 0;
     if (score > 0) {
@@ -347,18 +366,17 @@ function updateAllCalculations(data) {
     }
     if (reach > maxReach) maxReach = reach;
 
-    const totalCommentCount = commentsCount + repliesCount;
+    const totalCount = commentsCount + repliesCount;
     const metaEl  = document.getElementById(`statMeta-${id}`);
     const ptsEl   = document.getElementById(`statPoints-${id}`);
     const reachEl = document.getElementById(`statReach-${id}`);
     const barEl   = document.getElementById(`statBar-${id}`);
 
-    if (metaEl)  metaEl.innerText   = `${likes} curtidas • ${totalCommentCount} comentários/respostas • ${shares} compartilhamentos`;
-    if (ptsEl)   ptsEl.innerText    = `${score} pts`;
-    if (reachEl) reachEl.innerText  = `${reach.toLocaleString('pt-BR')} pessoas`;
+    if (metaEl)  metaEl.innerText  = `${likes} curtidas • ${totalCount} comentários/respostas • ${shares} compartilhamentos`;
+    if (ptsEl)   ptsEl.innerText   = `${score} pts`;
+    if (reachEl) reachEl.innerText = `${reach.toLocaleString('pt-BR')} pessoas`;
     if (barEl) {
-      const pct = ((reach / TOTAL_FICTITIOUS_USERS) * 100).toFixed(1);
-      barEl.style.width = `${Math.min(100, pct)}%`;
+      barEl.style.width = `${Math.min(100, (reach / TOTAL_FICTITIOUS_USERS * 100).toFixed(1))}%`;
     }
   }
 
@@ -366,44 +384,36 @@ function updateAllCalculations(data) {
   const sideReachVal    = document.getElementById('sidebarReachValue');
   const sideReachBar    = document.getElementById('sidebarReachBar');
 
-  if (navInteractions) navInteractions.innerText = `${totalInteractionsCount} ${totalInteractionsCount === 1 ? 'ação' : 'ações'}`;
+  if (navInteractions) navInteractions.innerText = `${totalInteractions} ${totalInteractions === 1 ? 'ação' : 'ações'}`;
   if (sideReachVal)    sideReachVal.innerText    = maxReach.toLocaleString('pt-BR');
-  if (sideReachBar) {
-    const pct = ((maxReach / TOTAL_FICTITIOUS_USERS) * 100).toFixed(0);
-    sideReachBar.style.width = `${Math.min(100, pct)}%`;
-  }
+  if (sideReachBar)    sideReachBar.style.width  = `${Math.min(100, (maxReach / TOTAL_FICTITIOUS_USERS * 100).toFixed(0))}%`;
 }
 
 // ============================================================
-// Navegação entre abas
+// Navegação
 // ============================================================
 function switchTab(tabId) {
-  document.querySelectorAll('.tab-pane').forEach(p  => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(b  => b.classList.remove('active'));
-  document.querySelectorAll('.m-btn').forEach(b     => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.m-btn').forEach(b   => b.classList.remove('active'));
 
-  const sections = { oficina: 'sectionOficina', feed: 'sectionFeed', stats: 'sectionStats' };
-  const navBtns  = { oficina: 'navOficinaBtn',  feed: 'navFeedBtn',   stats: 'navStatsBtn'   };
-  const mIndex   = { oficina: 0, feed: 1, stats: 2 };
-
-  if (sections[tabId]) document.getElementById(sections[tabId]).classList.add('active');
-  if (navBtns[tabId])  document.getElementById(navBtns[tabId]).classList.add('active');
-  const mBtns = document.querySelectorAll('.m-btn');
-  if (mBtns[mIndex[tabId]]) mBtns[mIndex[tabId]].classList.add('active');
-
+  const map = { oficina: ['sectionOficina','navOficinaBtn',0], feed: ['sectionFeed','navFeedBtn',1], stats: ['sectionStats','navStatsBtn',2] };
+  if (map[tabId]) {
+    document.getElementById(map[tabId][0]).classList.add('active');
+    document.getElementById(map[tabId][1]).classList.add('active');
+    const mBtns = document.querySelectorAll('.m-btn');
+    if (mBtns[map[tabId][2]]) mBtns[map[tabId][2]].classList.add('active');
+  }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ============================================================
-// SVG Interativo
-// ============================================================
 function updateNodeHint(text) {
   const box = document.getElementById('nodeHintBox');
   if (box) box.innerHTML = `💡 <strong>Papel no Grafo:</strong> ${escapeHtml(text)}`;
 }
 
 // ============================================================
-// Toast
+// Toast e utilitários
 // ============================================================
 let toastTimeout = null;
 function showToast(text) {
