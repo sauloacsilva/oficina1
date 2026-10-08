@@ -63,11 +63,14 @@
         <p class="card-note">Interaja no feed (curta, comente e compartilhe) para ver o impacto nas estatísticas!</p>
       </div>
 
-      <div class="sidebar-user">
-        <div class="avatar-circle">AL</div>
+      <div class="sidebar-user" id="sidebarUserProfile" onclick="editStudentProfile()" title="Clique para personalizar seu nome">
+        <div class="avatar-circle" id="sidebarAvatarCircle">AL</div>
         <div class="user-details">
-          <span class="user-name">Aluno Participante</span>
-          <span class="user-info">8º / 9º Ano</span>
+          <div class="user-name-line">
+            <span class="user-name" id="sidebarUserName">Aluno Participante</span>
+            <span class="user-edit-hint">✏️</span>
+          </div>
+          <span class="user-info" id="sidebarUserInfo">8º / 9º Ano</span>
         </div>
       </div>
     </aside>
@@ -450,13 +453,25 @@
       <section id="sectionFeed" class="tab-pane">
         <header class="content-header feed-top">
           <div>
-            <span class="section-tag">Simulação Interativa</span>
+            <div class="feed-top-badges">
+              <span class="section-tag">Simulação Interativa</span>
+              <span class="storage-badge" id="storageStatusBadge" title="Status de preservação dos dados">
+                <span class="status-dot"></span>
+                <span id="storageStatusText">💾 Salvo no Navegador</span>
+              </span>
+            </div>
             <h2>Feed Social da Escola</h2>
             <p class="section-lead">
               Todos os posts começam <strong>zerados</strong>. É você quem decide interagir (curtir, comentar e compartilhar). Observe o que acontece com as pontuações!
             </p>
           </div>
-          <button class="secondary-btn" onclick="resetAllFeed()">🔄 Resetar para Zero</button>
+          <div class="feed-actions-toolbar">
+            <button class="secondary-btn btn-sm" onclick="exportDataJson()" title="Baixar cópia dos dados em JSON">📥 Exportar</button>
+            <button class="secondary-btn btn-sm" onclick="triggerImportJson()" title="Restaurar dados de um arquivo JSON">📤 Importar</button>
+            <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleFileImport(event)">
+            <button class="secondary-btn btn-sm" onclick="openCloudModal()" title="Opções de Sincronização em Nuvem / Sala">⚙️ Nuvem</button>
+            <button class="secondary-btn btn-sm btn-danger-soft" onclick="confirmResetAllFeed()" title="Zerar todas as interações">🔄 Resetar para Zero</button>
+          </div>
         </header>
 
         <div class="feed-container">
@@ -789,6 +804,78 @@
 
   <!-- Toast -->
   <div id="toastNotification" class="toast hidden"></div>
+
+  <!-- Modal de Configuração de Nuvem / Sincronização -->
+  <div id="cloudModal" class="modal-overlay hidden" onclick="if(event.target===this) closeCloudModal()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <span class="modal-icon">☁️</span>
+          <div>
+            <h3>Sincronização & Nuvem</h3>
+            <span class="modal-sub">Opções de persistência e compartilhamento em sala</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeCloudModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mode-status-box" id="modalStatusBox">
+          <div class="status-indicator-big">
+            <span class="status-dot-big" id="modalStatusDot"></span>
+            <div>
+              <strong id="modalStatusTitle">Modo Local Ativo (100% Funcional)</strong>
+              <p id="modalStatusDesc">Os dados são preservados instantaneamente no armazenamento do seu navegador (LocalStorage) e sincronizados entre abas abertas.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="cloud-info-card">
+          <h4>💡 Como funciona na oficina:</h4>
+          <ul>
+            <li><strong>Uso Individual (Padrão):</strong> Não precisa configurar nada! Cada estudante curte, comenta e analisa seu feed de forma autônoma e rápida.</li>
+            <li><strong>Turma Toda Sincronizada ao Vivo:</strong> Se você quiser projetar o feed no telão e sincronizar múltiplos celulares juntos, você pode ativar o <strong>Firebase Realtime Database</strong> (gratuito do Google, com WebSockets push em tempo real, sem limites de polling).</li>
+          </ul>
+        </div>
+
+        <details class="cloud-details" id="cloudConfigDetails">
+          <summary>⚙️ Configurar Firebase Realtime Database (Opcional)</summary>
+          <div class="cloud-form">
+            <p class="form-hint">Cole as credenciais do seu projeto Firebase gratuito (Console Firebase → Visão geral → Configurações do Projeto):</p>
+            
+            <div class="form-group">
+              <label>Database URL (*.firebaseio.com)</label>
+              <input type="text" id="cfgDbUrl" placeholder="https://seu-projeto-default-rtdb.firebaseio.com">
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>API Key</label>
+                <input type="text" id="cfgApiKey" placeholder="AIzaSy...">
+              </div>
+              <div class="form-group">
+                <label>Project ID</label>
+                <input type="text" id="cfgProjectId" placeholder="meu-projeto">
+              </div>
+            </div>
+
+            <div class="modal-form-actions">
+              <button class="primary-btn" onclick="saveCloudConfig()">Ativar Firebase Nuvem</button>
+              <button class="secondary-btn btn-danger-soft" onclick="disableCloudConfig()">Desativar (Usar Local)</button>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="modal-footer">
+        <button class="secondary-btn" onclick="closeCloudModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Compat SDKs (Carregamento seguro para modo tempo real opcional) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <script src="script.js"></script>
 </body>
