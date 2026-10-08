@@ -127,33 +127,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Ações do usuário
 // ============================================================
 
-async function toggleLike(postId) {
-  const state = IS_CONFIGURED ? await readState() : localState;
-  state.posts[postId].likes = (state.posts[postId].likes || 0) + 1;
-  if (IS_CONFIGURED) await writeState(state);
-  else { localState = state; }
-  renderAll(state);
-  updateAllCalculations(state);
+function toggleLike(postId) {
+  // Atualização otimista: modifica local e re-renderiza imediatamente
+  localState.posts[postId].likes = (localState.posts[postId].likes || 0) + 1;
+  renderAll(localState);
+  updateAllCalculations(localState);
   showToast('❤️ Post curtido!');
+  // Grava no servidor em segundo plano
+  if (IS_CONFIGURED) writeState(localState);
 }
 
-async function sharePost(postId) {
-  const state = IS_CONFIGURED ? await readState() : localState;
-  state.posts[postId].shares = (state.posts[postId].shares || 0) + 1;
-  if (IS_CONFIGURED) await writeState(state);
-  else { localState = state; }
-  renderAll(state);
-  updateAllCalculations(state);
+function sharePost(postId) {
+  localState.posts[postId].shares = (localState.posts[postId].shares || 0) + 1;
+  renderAll(localState);
+  updateAllCalculations(localState);
   showToast('🚀 Post compartilhado!');
+  if (IS_CONFIGURED) writeState(localState);
 }
 
-async function submitComment(postId) {
+function submitComment(postId) {
   const input = document.getElementById(`commentInput-${postId}`);
   if (!input) return;
   const text = input.value.trim();
   if (!text) return;
 
-  const state = IS_CONFIGURED ? await readState() : localState;
   const newComment = {
     id: Date.now(),
     author: 'Aluno Participante',
@@ -162,54 +159,47 @@ async function submitComment(postId) {
     replies: []
   };
 
-  if (!Array.isArray(state.posts[postId].comments)) {
-    state.posts[postId].comments = [];
+  if (!Array.isArray(localState.posts[postId].comments)) {
+    localState.posts[postId].comments = [];
   }
-  state.posts[postId].comments.push(newComment);
-
-  if (IS_CONFIGURED) await writeState(state);
-  else { localState = state; }
-  renderAll(state);
-  updateAllCalculations(state);
+  localState.posts[postId].comments.push(newComment);
 
   input.value = '';
+  renderAll(localState);
+  updateAllCalculations(localState);
   showToast('💬 Comentário enviado!');
+  if (IS_CONFIGURED) writeState(localState);
 }
 
-async function likeComment(postId, commentId) {
-  const state = IS_CONFIGURED ? await readState() : localState;
-  const comment = (state.posts[postId].comments || []).find(c => c.id === commentId);
+function likeComment(postId, commentId) {
+  const comment = (localState.posts[postId].comments || []).find(c => c.id === commentId);
   if (comment) comment.likes = (comment.likes || 0) + 1;
-  if (IS_CONFIGURED) await writeState(state);
-  else { localState = state; }
-  renderAll(state);
-  updateAllCalculations(state);
+  renderAll(localState);
+  updateAllCalculations(localState);
   showToast('❤️ Curtida no comentário!');
+  if (IS_CONFIGURED) writeState(localState);
 }
 
-async function submitReply(postId, commentId) {
+function submitReply(postId, commentId) {
   const input = document.getElementById(`replyInput-${postId}-${commentId}`);
   if (!input) return;
   const text = input.value.trim();
   if (!text) return;
 
-  const state = IS_CONFIGURED ? await readState() : localState;
-  const comment = (state.posts[postId].comments || []).find(c => c.id === commentId);
+  const comment = (localState.posts[postId].comments || []).find(c => c.id === commentId);
   if (comment) {
     if (!Array.isArray(comment.replies)) comment.replies = [];
     comment.replies.push({ id: Date.now(), author: 'Aluno Participante', text });
   }
 
-  if (IS_CONFIGURED) await writeState(state);
-  else { localState = state; }
-
   const row = document.getElementById(`replyRow-${postId}-${commentId}`);
   if (row) row.style.display = 'none';
   input.value = '';
 
-  renderAll(state);
-  updateAllCalculations(state);
+  renderAll(localState);
+  updateAllCalculations(localState);
   showToast('🔁 Resposta enviada!');
+  if (IS_CONFIGURED) writeState(localState);
 }
 
 function toggleReplyBox(postId, commentId) {
@@ -222,13 +212,13 @@ function toggleReplyBox(postId, commentId) {
   }
 }
 
-async function resetAllFeed() {
+function resetAllFeed() {
   const zero = getZeroState();
-  if (IS_CONFIGURED) await writeState(zero);
   localState = zero;
   renderAll(zero);
   updateAllCalculations(zero);
   showToast('🔄 Todos os posts foram zerados com sucesso!');
+  if (IS_CONFIGURED) writeState(zero);
 }
 
 // ============================================================
