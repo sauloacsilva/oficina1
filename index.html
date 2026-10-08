@@ -48,6 +48,11 @@
           <span class="nav-icon">📊</span>
           <span class="nav-text">Estatísticas do Algoritmo</span>
         </button>
+
+        <a href="estatistica.html" class="nav-item" style="text-decoration:none;">
+          <span class="nav-icon">🧮</span>
+          <span class="nav-text">Calculadora Manual</span>
+        </a>
       </nav>
 
       <!-- Cartão com status das interações dos alunos -->
@@ -84,6 +89,7 @@
           <button class="m-btn active" onclick="switchTab('oficina')">📘 Oficina</button>
           <button class="m-btn" onclick="switchTab('feed')">📱 Feed</button>
           <button class="m-btn" onclick="switchTab('stats')">📊 Estatísticas</button>
+          <a href="estatistica.html" class="m-btn" style="text-decoration:none; text-align:center;">🧮 Manual</a>
         </div>
       </div>
 
@@ -664,12 +670,17 @@
 
       <!-- ================= ABA 3: ESTATÍSTICAS ================= -->
       <section id="sectionStats" class="tab-pane">
-        <header class="content-header">
-          <span class="section-tag">Painel Matemático</span>
-          <h2>A Caixa-Preta do Algoritmo Revelada</h2>
-          <p class="section-lead">
-            Veja exatamente como cada ação que você fez no Feed foi calculada pela fórmula matemática e para quantos usuários fictícios cada publicação foi entregue.
-          </p>
+        <header class="content-header" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <span class="section-tag">Painel Matemático</span>
+            <h2>A Caixa-Preta do Algoritmo Revelada</h2>
+            <p class="section-lead">
+              Veja exatamente como cada ação que você fez no Feed foi calculada pela fórmula matemática e para quantos usuários fictícios cada publicação foi entregue.
+            </p>
+          </div>
+          <a href="estatistica.html" class="primary-btn" style="text-decoration:none; margin-bottom:0.5rem;">
+            🧮 Abrir Calculadora com Registro Manual ➔
+          </a>
         </header>
 
         <!-- Tabela de Pesos -->
