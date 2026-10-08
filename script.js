@@ -14,7 +14,7 @@
 // ⚙️  SUAS CREDENCIAIS JSONBIN
 // ============================================================
 const BIN_ID = 'C6ac5bfbaac6210605a1b152f';    // ex: "64f3a1b2..."
-const MASTER_KEY = '$2a$10$pCFb3igTCxvYYv8QlIw7GezegEOAJuWL/phP/OaN7lG6hQ/yU9NMa'; // ex: "$2a$10$..."
+const MASTER_KEY = '$2a$10$NGRxV4O1GoXwn/wDDbChG.xxhpJB.Fc53QONedlYsJMrvTwih1fie'; // ex: "$2a$10$..."
 const POLL_MS = 3000; // Verifica novos dados a cada 3 segundos
 // ============================================================
 
